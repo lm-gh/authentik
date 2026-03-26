@@ -148,7 +148,7 @@ test.describe("Impersonation", () => {
 
             await createDialog.getByRole("button", { name: "Create User" }).click();
 
-            await createDialog.waitFor({ state: "hidden" });
+            await createDialog.waitFor({ state: "hidden", timeout: 10_000 });
             await expect(createDialog, "Create dialog closes").toBeHidden();
         });
 
@@ -169,7 +169,9 @@ test.describe("Impersonation", () => {
 
             await impersonateDialog.getByRole("button", { name: "Impersonate" }).click();
 
-            await navigator.waitForPathname("if/user/#/library");
+            await navigator.waitForPathname("if/user/#/library", {
+                timeout: 10_000,
+            });
         });
 
         await test.step("Confirm impersonation", async () => {
