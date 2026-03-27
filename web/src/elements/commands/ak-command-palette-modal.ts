@@ -17,7 +17,6 @@ import {
 } from "#elements/commands/shared";
 import { listen } from "#elements/decorators/listen";
 import { AKModal } from "#elements/modals/ak-modal";
-import { TransclusionElement } from "#elements/modals/shared";
 import { asInvoker, renderDialog } from "#elements/modals/utils";
 import { SlottedTemplateResult } from "#elements/types";
 import { ifPresent } from "#elements/utils/attributes";
@@ -48,7 +47,7 @@ export class AKCommandPaletteModal extends AKModal {
     public static open = asInvoker(AKCommandPaletteModal);
 
     protected autofocusTarget = new FocusTarget<HTMLInputElement>();
-    protected formRef = createRef<HTMLFormElement & TransclusionElement>();
+    protected formRef = createRef<HTMLFormElement>();
 
     public readonly actionNamespaceSymbol = CommandNamespaceSymbol[PaletteCommandNamespace.Action];
     public readonly navigationNamespaceSymbol =

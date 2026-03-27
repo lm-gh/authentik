@@ -19,7 +19,7 @@ import { AKElement } from "#elements/Base";
 import { intersectionObserver } from "#elements/decorators/intersection-observer";
 import { WithLicenseSummary } from "#elements/mixins/license";
 import { WithSession } from "#elements/mixins/session";
-import { type TransclusionElement } from "#elements/modals/shared";
+import { type TransclusionElement, TransclusionSymbol } from "#elements/modals/shared";
 import { getURLParam, updateURLParams } from "#elements/router/RouteMatch";
 import Styles from "#elements/table/Table.css";
 import { SlottedTemplateResult } from "#elements/types";
@@ -94,6 +94,8 @@ export abstract class Table<T extends object, D = T>
         PFPagination,
         Styles,
     ];
+
+    public [TransclusionSymbol] = true;
 
     //#region Abstract members
 
@@ -269,6 +271,9 @@ export abstract class Table<T extends object, D = T>
     @property({ type: Boolean })
     public checkboxChip = false;
 
+    @property({ type: String, attribute: "display-box", reflect: true, useDefault: true })
+    public displayBox: "contents" | "block" = "block";
+
     /**
      * Whether the table is visible in the viewport.
      */
@@ -332,6 +337,7 @@ export abstract class Table<T extends object, D = T>
 
     public override connectedCallback(): void {
         super.connectedCallback();
+
         this.addEventListener(EVENT_REFRESH, this.#refreshListener);
         window.addEventListener("submit", this.#refreshListener);
 

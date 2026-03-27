@@ -415,11 +415,15 @@ export class AKModal extends AKElement {
 
         const assignedElements = this.defaultSlot.assignedElements({ flatten: true });
 
-        const form = assignedElements.find(isTransclusionElement) ?? null;
+        const nextSlottedElement = assignedElements.find(isTransclusionElement) ?? null;
 
-        if (form && form !== this.slottedElement) {
-            this.slottedElement = form;
-            this.slottedElement.viewportCheck = false;
+        if (nextSlottedElement && nextSlottedElement !== this.slottedElement) {
+            nextSlottedElement.viewportCheck = false;
+            if (nextSlottedElement.displayBox) {
+                nextSlottedElement.displayBox = "contents";
+            }
+
+            this.slottedElement = nextSlottedElement;
         }
 
         const dialogElement = this.parentElement;

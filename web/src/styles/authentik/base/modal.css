@@ -22,6 +22,7 @@
 .ak-c-modal {
     box-sizing: content-box;
     scrollbar-gutter: stable;
+    overscroll-behavior: none;
     background-color: var(--ak-c-modal--BackgroundColor);
     box-shadow: var(--ak-c-modal--BoxShadow);
     padding: var(--ak-c-modal--Padding);

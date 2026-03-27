@@ -147,6 +147,10 @@ time {
     container-type: inline-size;
 }
 
+:host([display-box="contents"]) {
+    display: contents;
+}
+
 .pf-c-table {
     @container (width > 1200px) {
         --pf-c-table--cell--MinWidth: 9em;

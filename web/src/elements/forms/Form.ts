@@ -19,7 +19,7 @@ import { PreventFormSubmit } from "#elements/forms/helpers";
 import { HorizontalFormElement } from "#elements/forms/HorizontalFormElement";
 import { serializeForm } from "#elements/forms/serialization";
 import { showMessage } from "#elements/messages/MessageContainer";
-import { TransclusionElement } from "#elements/modals/shared";
+import { TransclusionElement, TransclusionSymbol } from "#elements/modals/shared";
 import {
     DialogInit,
     modalInvoker,
@@ -109,6 +109,8 @@ export class Form<T = Record<string, unknown>, D = T>
         Styles,
     ];
 
+    public [TransclusionSymbol] = true;
+
     /**
      * A helper method to create an invoker for a modal containing this form.
      *
@@ -152,7 +154,10 @@ export class Form<T = Record<string, unknown>, D = T>
      */
     protected send?(data: NonNullable<D>): Promise<unknown>;
 
-    viewportCheck = true;
+    /**
+     * @deprecated
+     */
+    public viewportCheck = true;
 
     //#region Properties
 
