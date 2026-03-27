@@ -1,7 +1,3 @@
-[part="table-container"] {
-    overflow-x: auto;
-}
-
 .pf-c-table {
     --pf-global--primary-color--100: var(--pf-global--primary-color--300);
 
