@@ -71,6 +71,11 @@
     font-style: italic;
 }
 
+.ak-m-placeholder {
+    font-style: italic;
+    color: var(--pf-c-form-control--placeholder--Color, var(--pf-global--Color--dark-200));
+}
+
 /* #endregion */
 
 /* #region Tooltip */

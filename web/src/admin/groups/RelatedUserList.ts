@@ -91,7 +91,11 @@ export class AddRelatedUserForm extends Form<{ users: number[] }> {
         return data;
     }
 
-    protected openUserSelectionModal = () => {
+    protected openUserSelectionModal = (event?: Event) => {
+        if (event?.defaultPrevented) {
+            return;
+        }
+
         return renderModal(html`
             <ak-form
                 headline=${msg("Select users")}
@@ -111,7 +115,7 @@ export class AddRelatedUserForm extends Form<{ users: number[] }> {
         // table to allow the table to appear as an inline-block element next to the input group.
         // This should be fixed by moving the `@container` query off `:host`.
 
-        return html` <ak-form-element-horizontal name="users">
+        return html`<ak-form-element-horizontal name="users">
             ${AKLabel(
                 {
                     slot: "label",
@@ -130,14 +134,16 @@ export class AddRelatedUserForm extends Form<{ users: number[] }> {
                         aria-label=${msg("Open user selection dialog")}
                         @click=${this.openUserSelectionModal}
                     >
-                        <pf-tooltip position="top" content=${msg("Add users")}>
+                        <pf-tooltip position="right" content=${msg("Add users")}>
                             <i class="fas fa-plus" aria-hidden="true"></i>
                         </pf-tooltip>
                     </button>
                 </div>
                 <div class="pf-c-form-control">
-                    <ak-chip-group>
-                        ${this.usersToAdd.map((user) => {
+                    <ak-chip-group
+                        @click=${this.openUserSelectionModal}
+                        placeholder=${msg("Select one or more users to assign...")}
+                        >${this.usersToAdd.map((user) => {
                             return html`<ak-chip
                                 removable
                                 value=${ifDefined(user.pk)}
@@ -149,8 +155,8 @@ export class AddRelatedUserForm extends Form<{ users: number[] }> {
                             >
                                 ${UserOption(user)}
                             </ak-chip>`;
-                        })}
-                    </ak-chip-group>
+                        })}</ak-chip-group
+                    >
                 </div>
             </div>
         </ak-form-element-horizontal>`;
