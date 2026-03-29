@@ -46,23 +46,25 @@
 /* #region Transitions */
 
 .ak-c-modal {
-    --ak-c-modal--TransitionDuration--fast: 100ms;
-    --ak-c-modal--TransitionDuration--slow: 150ms;
+    --ak-c-modal--TransitionDuration--Transform: 250ms;
+    --ak-c-modal--TransitionDuration--Opacity: 100ms;
+    --ak-c-modal--TransitionDuration--Backdrop: 100ms;
+    --ak-c-modal--TransitionDuration--Overlay: 50ms;
+    --ak-c-modal--TransitionDuration--Display: 50ms;
+    --ak-c-modal--TransitionDuration--Height: 25ms;
+
     margin-block-start: var(--ak-c-modal--MarginBlockStart);
 
     interpolate-size: allow-keywords;
-
     transition:
-        height var(--ak-c-modal--TransitionDuration--fast),
-        opacity var(--ak-c-modal--TransitionDuration--slow),
-        transform var(--ak-c-modal--TransitionDuration--slow),
-        overlay var(--ak-c-modal--TransitionDuration--slow) allow-discrete,
-        display var(--ak-c-modal--TransitionDuration--slow) allow-discrete;
+        opacity var(--ak-c-modal--TransitionDuration--Opacity),
+        transform var(--ak-c-modal--TransitionDuration--Transform),
+        overlay var(--ak-c-modal--TransitionDuration--Overlay) allow-discrete,
+        display var(--ak-c-modal--TransitionDuration--Display) allow-discrete;
 
     transition-timing-function: ease-in-out;
 
     opacity: 0;
-    height: 0;
     transform: translateY(1em);
 
     &::backdrop {
@@ -75,7 +77,7 @@
             background-color;
 
         transition-timing-function: ease-in-out;
-        transition-duration: var(--ak-c-modal--TransitionDuration--slow);
+        transition-duration: var(--ak-c-modal--TransitionDuration--Backdrop);
     }
 
     &.fade-in {
@@ -85,13 +87,6 @@
         );
 
         opacity: 1;
-        height: calc-size(max-content, size);
-    }
-
-    @media screen and (prefers-reduced-motion: reduce) {
-        /* A small duration is still needed to smoothly handle display changes. */
-        --ak-c-modal--TransitionDuration--fast: 25ms;
-        --ak-c-modal--TransitionDuration--slow: 50ms;
     }
 }
 
