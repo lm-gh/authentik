@@ -13,14 +13,9 @@
 
 .pf-c-wizard__nav-link {
     padding: var(--pf-global--spacer--form-element);
-    border-radius: var(--pf-global--BorderRadius--sm);
 
     &::before {
         top: var(--pf-global--spacer--form-element);
-    }
-
-    &.pf-m-current {
-        background: var(--pf-global--BackgroundColor--200);
     }
 }
 
