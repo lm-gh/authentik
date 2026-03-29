@@ -45,6 +45,9 @@ export class ApplicationListPage extends WithBrandConfig(TablePage<Application>)
 
     protected override searchEnabled = true;
     public pageTitle = msg("Applications");
+    public searchLabel = msg("Applications search");
+    public searchPlaceholder = msg("Search for applications…");
+
     public get pageDescription() {
         return msg(
             str`External applications that use ${this.brandingTitle} as an identity provider via protocols like OAuth2 and SAML. All applications are shown here, even ones you cannot access.`,
@@ -166,17 +169,28 @@ export class ApplicationListPage extends WithBrandConfig(TablePage<Application>)
 
     protected override renderObjectCreate(): TemplateResult {
         return html`<ak-dropdown class="pf-c-dropdown">
-            <button
-                class="pf-c-button pf-m-primary pf-c-dropdown__toggle"
-                type="button"
-                id="new-application-toggle"
-                aria-haspopup="menu"
-                aria-controls="new-application-menu"
-                tabindex="0"
-            >
-                <span class="pf-c-dropdown__toggle-text">${msg("New Application")}</span>
-                <i class="fas fa-caret-down pf-c-dropdown__toggle-icon" aria-hidden="true"></i>
-            </button>
+            <div class="pf-c-dropdown__toggle pf-m-primary pf-m-split-button pf-m-action">
+                <button
+                    class="pf-c-dropdown__toggle-button"
+                    type="button"
+                    ${AkApplicationWizard.asModalInvoker()}
+                >
+                    ${msg("New Application")}
+                </button>
+
+                <button
+                    class="pf-c-dropdown__toggle-button"
+                    type="button"
+                    id="new-application-toggle"
+                    aria-haspopup="menu"
+                    aria-controls="new-application-menu"
+                    tabindex="0"
+                    aria-label=${msg("Toggle new application menu")}
+                >
+                    <i class="fas fa-caret-down" aria-hidden="true"></i>
+                </button>
+            </div>
+
             <menu
                 class="pf-c-dropdown__menu"
                 hidden
