@@ -620,7 +620,7 @@ export class AKCommandPaletteModal extends AKModal {
             @submit=${this.submitListener}
         >
             <div
-                class="input"
+                part="command-field-container"
                 aria-expanded=${this.open ? "true" : "false"}
                 aria-autocomplete="list"
                 role="combobox"

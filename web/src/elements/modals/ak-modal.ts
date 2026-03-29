@@ -240,9 +240,7 @@ export class AKModal extends AKElement {
         });
     };
 
-    protected fadeInListener = async (event: TransitionEvent) => {
-        this.logger.debug("fade-in complete", event);
-
+    protected fadeInListener = async (_event: TransitionEvent) => {
         this.removeEventListener("transitionend", this.fadeInListener);
 
         const dialogElement = this.parentElement;

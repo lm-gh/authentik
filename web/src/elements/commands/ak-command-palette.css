@@ -14,4 +14,5 @@
 
     border-radius: var(--pf-global--BorderRadius--sm);
     backdrop-filter: var(--ak-c-command-palette--BackdropFilter);
+    transform: translate3d(0, 0, 0); /* Fixes rendering artifacts. */
 }

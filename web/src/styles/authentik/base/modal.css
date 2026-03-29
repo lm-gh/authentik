@@ -235,6 +235,7 @@
 /* #endregion */
 
 .ak-c-modal__content {
+    background-color: var(--ak-c-modal--BackgroundColor);
     display: grid;
     grid-template-rows: [header] auto [body] 1fr [footer] auto;
 }
