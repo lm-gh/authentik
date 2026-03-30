@@ -1,17 +1,19 @@
 import "#elements/EmptyState";
 
+import { APIError, parseAPIResponseError, pluckErrorDetail } from "#common/errors/network";
 import { AKRefreshEvent } from "#common/events";
 
 import { listen } from "#elements/decorators/listen";
+import { asEditModalInvoker } from "#elements/dialogs/utils";
 import { Form } from "#elements/forms/Form";
-import { asEditModalInvoker } from "#elements/modals/utils";
 import { SlottedTemplateResult } from "#elements/types";
 
 import { ConsoleLogger } from "#logger/browser";
 
-import { msg, str } from "@lit/localize";
-import { html } from "lit";
-import { property } from "lit/decorators.js";
+import { msg } from "@lit/localize";
+import { PropertyValues } from "lit";
+import { html } from "lit-html";
+import { property, state } from "lit/decorators.js";
 
 /**
  * A base form that automatically tracks the server-side object (instance)
@@ -41,6 +43,11 @@ export abstract class ModelForm<
 
     protected logger = ConsoleLogger.prefix(`model-form/${this.tagName.toLowerCase()}`);
 
+    @state()
+    protected error: APIError | null = null;
+
+    protected abortController: AbortController | null = null;
+
     /**
      * An overridable method for loading an instance.
      *
@@ -52,80 +59,44 @@ export abstract class ModelForm<
     /**
      * An overridable method for loading any data, beyond the instance.
      *
+     *
      * @see {@linkcode loadInstance}
      * @returns A promise that resolves when the data has been loaded.
      */
-    protected async load(): Promise<void> {
-        return Promise.resolve();
-    }
+    protected async load?(): Promise<void | boolean>;
+
+    /**
+     * Timestamp of last call to {@linkcode load}.
+     * Used to prevent multiple calls to `load` when the form is rapidly shown and hidden.
+     */
+    #loadedAt: Date | null = null;
 
     @property({ attribute: "pk", converter: { fromAttribute: (value) => value as PKT } })
-    public set instancePk(value: PKT) {
-        this.#instancePk = value;
+    public instancePk: PKT | null = null;
 
-        if (this.viewportCheck && !this.isInViewport) {
-            return;
-        }
+    @property({ attribute: false, useDefault: true })
+    public instance: T | null = this.createDefaultInstance();
 
-        if (this.#loading) {
-            return;
-        }
+    //#region Public methods
 
-        this.#loading = true;
+    public override reset(): void {
+        super.reset();
 
-        this.load().then(() => {
-            this.loadInstance(value).then((instance) => {
-                this.instance = instance;
-                this.#loading = false;
-                this.requestUpdate();
-            });
-        });
+        this.instance = null;
+        this.instancePk = null;
+
+        this.requestUpdate();
     }
 
-    #instancePk: PKT | null = null;
-
-    public get instancePk(): PKT | null {
-        return this.#instancePk;
+    public createDefaultInstance(): T | null {
+        return null;
     }
 
-    // Keep track if we've loaded the model instance
-    #initialLoad = false;
-
-    // Keep track if we've done the general data loading of load()
-    #initialDataLoad = false;
-
-    #loading = false;
-
-    @property({ attribute: false })
-    instance?: T = this.defaultInstance;
-
-    get defaultInstance(): T | undefined {
-        return undefined;
-    }
-
-    @listen(AKRefreshEvent, {
-        target: null,
-    })
-    protected refresh = async () => {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-
-        if (!this.#instancePk) return;
-
-        const viewportVisible = this.isInViewport || !this.viewportCheck;
-
-        if (!viewportVisible) {
-            this.logger.debug(`Instance not in viewport, skipping refresh`);
-            return;
-        }
-
-        return this.loadInstance(this.#instancePk).then((instance) => {
-            this.instance = instance;
-        });
-    };
+    //#endregion
 
     protected override formatSubmitLabel(): string {
-        if (this.#instancePk) {
-            return msg(str`Save Changes`, {
+        if (this.instancePk) {
+            return msg("Save Changes", {
                 id: "model-form.apply-submit",
             });
         }
@@ -134,48 +105,89 @@ export abstract class ModelForm<
     }
 
     protected override formatHeadline(): string {
-        return super.formatHeadline(this.headline, this.#instancePk ? msg("Edit") : null);
+        return super.formatHeadline(this.headline, this.instancePk ? msg("Edit") : null);
     }
 
-    //#region Public methods
+    //#region Lifecycle
 
-    public override reset(): void {
-        super.reset();
+    /**
+     * Timestamp of when a fetch was requested, but deferred due to the table not being visible.
+     */
+    #deferredRefreshRequestAt: Date | null = null;
 
-        this.instance = undefined;
-        this.#initialLoad = false;
-        this.#initialDataLoad = false;
+    @listen(AKRefreshEvent, {
+        target: null,
+    })
+    protected synchronizeRefreshSchedule(): Promise<void> {
+        if (!this.visible) {
+            if (!this.#deferredRefreshRequestAt) {
+                this.#deferredRefreshRequestAt = new Date();
+            }
 
-        this.requestUpdate();
-    }
-
-    //#endregion
-
-    //#region Rendering
-
-    protected override renderVisible(): SlottedTemplateResult {
-        if ((this.#instancePk && !this.instance) || !this.#initialDataLoad) {
-            return html`<ak-empty-state loading></ak-empty-state>`;
+            return Promise.resolve();
         }
-        return super.renderVisible();
+
+        if (!this.#deferredRefreshRequestAt) {
+            return Promise.resolve();
+        }
+
+        return this.refresh();
+    }
+
+    public refresh = async (): Promise<void> => {
+        if (!this.instancePk) return;
+
+        this.loading = true;
+
+        if (!this.#loadedAt && this.load) {
+            const result = await this.load().catch((error) => {
+                this.loading = false;
+
+                return this.delegateError(error);
+            });
+
+            if (result === false) {
+                return;
+            }
+
+            this.#loadedAt = new Date();
+        }
+
+        return this.loadInstance(this.instancePk)
+            .then((instance) => {
+                this.instance = instance;
+            })
+            .catch(this.delegateError)
+            .finally(() => {
+                this.loading = false;
+            });
+    };
+
+    protected delegateError = async (error: unknown): Promise<void> => {
+        this.error = await parseAPIResponseError(error);
+    };
+
+    public override updated(changedProperties: PropertyValues<this>): void {
+        super.updated(changedProperties);
+
+        const hasPK = !!(changedProperties.has("instancePk") && this.instancePk);
+        const visible = changedProperties.has("visible") && this.visible;
+
+        if (hasPK || visible) {
+            this.synchronizeRefreshSchedule();
+        }
     }
 
     protected override render(): SlottedTemplateResult {
-        // if we're in viewport now and haven't loaded AND have a PK set, load now
-        // Or if we don't check for viewport in some cases
-        const viewportVisible = this.isInViewport || !this.viewportCheck;
-        if (this.#instancePk && !this.#initialLoad && viewportVisible) {
-            this.instancePk = this.#instancePk;
-            this.#initialLoad = true;
-        } else if (!this.#initialDataLoad && viewportVisible) {
-            // else if since if the above case triggered that will also call this.load(), so
-            // ensure we don't load again
-            this.load().then(() => {
-                this.#initialDataLoad = true;
-                // Class attributes changed in this.load() might not be @property()
-                // or @state() so let's trigger a re-render to be sure we get updated
-                this.requestUpdate();
-            });
+        if (this.loading) {
+            return html`<ak-empty-state loading></ak-empty-state>`;
+        }
+
+        if (this.error) {
+            return html`<ak-empty-state icon="pf-icon-warning-triangle" part="error-state">
+                <span>${msg("An error occurred while loading the form.")}</span>
+                <div slot="body">${pluckErrorDetail(this.error)}</div>
+            </ak-empty-state>`;
         }
 
         return super.render();

@@ -17,9 +17,9 @@ import { GroupResult } from "#common/utils";
 
 import { AKElement } from "#elements/Base";
 import { intersectionObserver } from "#elements/decorators/intersection-observer";
+import { type TransclusionElement, TransclusionSymbol } from "#elements/dialogs/shared";
 import { WithLicenseSummary } from "#elements/mixins/license";
 import { WithSession } from "#elements/mixins/session";
-import { type TransclusionElement, TransclusionSymbol } from "#elements/modals/shared";
 import { getURLParam, updateURLParams } from "#elements/router/RouteMatch";
 import Styles from "#elements/table/Table.css";
 import { SlottedTemplateResult } from "#elements/types";

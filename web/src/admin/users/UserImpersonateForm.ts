@@ -3,8 +3,8 @@ import "#components/ak-text-input";
 import { DEFAULT_CONFIG } from "#common/api/config";
 import { APIMessage, MessageLevel } from "#common/messages";
 
+import { asEditModalInvoker } from "#elements/dialogs/utils";
 import { Form } from "#elements/forms/Form";
-import { asEditModalInvoker } from "#elements/modals/utils";
 
 import { AdminApi, CoreApi, ImpersonationRequest } from "@goauthentik/api";
 

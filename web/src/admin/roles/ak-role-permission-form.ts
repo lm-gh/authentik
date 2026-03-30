@@ -8,9 +8,9 @@ import "#elements/forms/SearchSelect/index";
 
 import { DEFAULT_CONFIG } from "#common/api/config";
 
+import { renderModal } from "#elements/dialogs/utils";
 import { AKFormSubmitEvent } from "#elements/forms/Form";
 import { ModelForm } from "#elements/forms/ModelForm";
-import { renderModal } from "#elements/modals/utils";
 
 import { Permission, RbacApi } from "@goauthentik/api";
 

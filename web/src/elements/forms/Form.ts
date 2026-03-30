@@ -12,6 +12,15 @@ import {
 import { APIMessage, MessageLevel } from "#common/messages";
 
 import { AKElement } from "#elements/Base";
+import { intersectionObserver } from "#elements/decorators/intersection-observer";
+import { TransclusionElement, TransclusionSymbol } from "#elements/dialogs/shared";
+import {
+    DialogInit,
+    modalInvoker,
+    ModalInvokerDirectiveResult,
+    ModalInvokerInit,
+    renderModal,
+} from "#elements/dialogs/utils";
 import { reportInvalidFields } from "#elements/forms/errors";
 import Styles from "#elements/forms/Form.css";
 import { reportValidityDeep } from "#elements/forms/FormGroup";
@@ -19,14 +28,6 @@ import { PreventFormSubmit } from "#elements/forms/helpers";
 import { HorizontalFormElement } from "#elements/forms/HorizontalFormElement";
 import { serializeForm } from "#elements/forms/serialization";
 import { showMessage } from "#elements/messages/MessageContainer";
-import { TransclusionElement, TransclusionSymbol } from "#elements/modals/shared";
-import {
-    DialogInit,
-    modalInvoker,
-    ModalInvokerDirectiveResult,
-    ModalInvokerInit,
-    renderModal,
-} from "#elements/modals/utils";
 import { SlottedTemplateResult } from "#elements/types";
 import { createFileMap } from "#elements/utils/inputs";
 
@@ -109,6 +110,8 @@ export class Form<T = Record<string, unknown>, D = T>
         Styles,
     ];
 
+    //#region Modal helpers
+
     public [TransclusionSymbol] = true;
 
     /**
@@ -143,6 +146,8 @@ export class Form<T = Record<string, unknown>, D = T>
         return renderModal(this, init);
     }
 
+    //#endregion
+
     protected logger = ConsoleLogger.prefix(`form/${this.tagName.toLowerCase()}`);
 
     /**
@@ -154,12 +159,13 @@ export class Form<T = Record<string, unknown>, D = T>
      */
     protected send?(data: NonNullable<D>): Promise<unknown>;
 
-    /**
-     * @deprecated
-     */
-    public viewportCheck = true;
-
     //#region Properties
+
+    /**
+     * Whether the table is visible in the viewport.
+     */
+    @intersectionObserver()
+    public visible = false;
 
     @property({ type: String })
     public successMessage?: string;
@@ -224,19 +230,6 @@ export class Form<T = Record<string, unknown>, D = T>
      */
     @property({ type: String })
     public entityPlural: string | null = null;
-
-    /**
-     * Called by the render function.
-     *
-     * Blocks rendering the form if the form is not within the
-     * viewport.
-     *
-     * @todo Consider using a observer instead.
-     */
-    public get isInViewport(): boolean {
-        const rect = this.getBoundingClientRect();
-        return rect.x + rect.y + rect.width + rect.height !== 0;
-    }
 
     protected defaultSlot: HTMLSlotElement = this.ownerDocument.createElement("slot");
 
@@ -510,19 +503,16 @@ export class Form<T = Record<string, unknown>, D = T>
             return this.defaultSlot;
         }
 
-        return html`<div part="form-wrapper">
-            <slot name="before-form"></slot>
-            <form
-                id="form"
-                ${ref(this.formRef)}
-                class="pf-c-form pf-m-horizontal"
-                autocomplete=${ifDefined(this.autocomplete)}
-                method="dialog"
-                @submit=${this.doSubmit}
-            >
-                ${inline}
-            </form>
-        </div>`;
+        return html`<form
+            id="form"
+            ${ref(this.formRef)}
+            class="pf-c-form pf-m-horizontal"
+            autocomplete=${ifDefined(this.autocomplete)}
+            method="dialog"
+            @submit=${this.doSubmit}
+        >
+            ${inline}
+        </form>`;
     }
 
     /**
@@ -610,10 +600,11 @@ export class Form<T = Record<string, unknown>, D = T>
         });
     }
 
-    /**
-     * An overridable method for rendering the form when it is visible.
-     */
-    protected renderVisible(): SlottedTemplateResult {
+    protected override render(): SlottedTemplateResult {
+        if (!this.visible) {
+            return nothing;
+        }
+
         return [
             this.loading ? this.loadingOverlay : nothing,
             this.renderHeader(),
@@ -621,14 +612,6 @@ export class Form<T = Record<string, unknown>, D = T>
             this.renderFormWrapper(),
             this.renderActions(),
         ];
-    }
-
-    protected override render(): SlottedTemplateResult {
-        if (this.viewportCheck && !this.isInViewport) {
-            return nothing;
-        }
-
-        return this.renderVisible();
     }
 
     //#endregion

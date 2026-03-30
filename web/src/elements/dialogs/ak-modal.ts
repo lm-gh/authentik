@@ -1,15 +1,17 @@
+import Styles from "./ak-modal.css";
+import DialogStyles from "./dialog.css";
+
 import { PFSize } from "#common/enums";
 
 import { AKElement } from "#elements/Base";
-import { isTransclusionElement, TransclusionElement } from "#elements/modals/shared";
-import Styles from "#elements/modals/styles.css";
+import { isTransclusionElement, TransclusionElement } from "#elements/dialogs/shared";
 import {
     DialogInit,
     modalInvoker,
     ModalInvokerDirectiveResult,
     ModalInvokerInit,
     renderDialog,
-} from "#elements/modals/utils";
+} from "#elements/dialogs/utils";
 import { SlottedTemplateResult } from "#elements/types";
 
 import { ConsoleLogger, Logger } from "#logger/browser";
@@ -75,6 +77,8 @@ export class AKModal extends AKElement {
         Styles,
     ];
 
+    public static hostStyles: CSSResult[] = [DialogStyles];
+
     #hostResizeObserver: ResizeObserver;
 
     //#region Protected Properties
@@ -85,6 +89,10 @@ export class AKModal extends AKElement {
      * An optional Lit ref which can automatically synchronize the modal's height with the element's height.
      */
     protected scrollContainerRef = createRef<HTMLElement>();
+
+    protected get scrollContainer(): HTMLElement {
+        return this.scrollContainerRef.value || this;
+    }
 
     /**
      * A ref to the modal title element, used for accessibility purposes (e.g., setting `aria-labelledby` on the dialog).
@@ -232,7 +240,7 @@ export class AKModal extends AKElement {
             }
 
             this.#heightResetAnimationFrameID = requestAnimationFrame(() => {
-                const scrollContainer = this.scrollContainerRef.value || this;
+                const { scrollContainer } = this;
                 const scrollHeight = scrollContainer.scrollHeight;
 
                 this.lastScrollHeight = scrollHeight;
@@ -254,7 +262,7 @@ export class AKModal extends AKElement {
 
         dialogElement.style.height = dialogElement.clientHeight + "px";
 
-        const scrollContainer = this.scrollContainerRef.value || this;
+        const { scrollContainer } = this;
 
         this.#hostResizeObserver.observe(scrollContainer);
 
@@ -384,10 +392,10 @@ export class AKModal extends AKElement {
         const tagName = this.tagName.toLowerCase();
 
         dialogElement.dataset.akModal = tagName;
-        dialogElement.classList.add("ak-c-modal", this.size);
+        dialogElement.classList.add("ak-c-dialog", this.size);
 
         // eslint-disable-next-line wc/no-self-class
-        this.classList.add("ak-c-modal__content");
+        this.classList.add("ak-c-dialog__modal");
 
         dialogElement.addEventListener("cancel", this.cancelListener);
         dialogElement.addEventListener("click", this.backdropClickListener, { passive: true });
@@ -416,7 +424,6 @@ export class AKModal extends AKElement {
         const nextSlottedElement = assignedElements.find(isTransclusionElement) ?? null;
 
         if (nextSlottedElement && nextSlottedElement !== this.slottedElement) {
-            nextSlottedElement.viewportCheck = false;
             if (nextSlottedElement.displayBox) {
                 nextSlottedElement.displayBox = "contents";
             }
@@ -428,8 +435,8 @@ export class AKModal extends AKElement {
 
         if (dialogElement && dialogElement.open) {
             requestAnimationFrame(() => {
-                const scrollContainer = this.scrollContainerRef.value || this;
-                const scrollHeight = scrollContainer.scrollHeight;
+                const { scrollContainer } = this;
+                const { scrollHeight } = scrollContainer;
 
                 if (scrollHeight !== this.lastScrollHeight) {
                     this.resetHeight();
@@ -524,9 +531,9 @@ export class AKModal extends AKElement {
 
             const content = slottedElement ? slottedElement.renderHeader?.(true) : null;
 
-            return html`<div class="ak-c-modal__header" part="header">
-                <div class="ak-c-modal__title">
-                    <h1 class="ak-c-modal__title-text" id="modal-title" ${ref(this.modalTitleRef)}>
+            return html`<div class="ak-c-dialog__header" part="header">
+                <div class="ak-c-dialog__title">
+                    <h1 class="ak-c-dialog__title-text" id="modal-title" ${ref(this.modalTitleRef)}>
                         ${this.headline}
                         <slot name="header"></slot>
                         ${content}
@@ -554,7 +561,7 @@ export class AKModal extends AKElement {
 
             return html`<footer
                 aria-label=${msg("Form actions")}
-                class="ak-c-modal__footer"
+                class="ak-c-dialog__footer"
                 part="actions"
             >
                 <slot name="actions"></slot>
@@ -576,7 +583,7 @@ export class AKModal extends AKElement {
      */
     protected render(): unknown {
         return html`${this.beforeBodySlot}
-            <div class="ak-c-modal__body" part="body">${this.defaultSlot}</div>`;
+            <div class="ak-c-dialog__body" part="body">${this.defaultSlot}</div>`;
     }
 
     //#endregion

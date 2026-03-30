@@ -164,12 +164,16 @@ export class ModalForm extends ModalButton {
         this.submitSlot.name = "submit";
 
         this.formSlot.addEventListener("slotchange", () => {
-            const slottedForm = this.hasSlotted("header")
-                ? null
-                : findSlottedInstance(Form, this.formSlot);
+            const slottedForm = findSlottedInstance(Form, this.formSlot);
 
-            this.headingContent = slottedForm?.headline || null;
-            this.submitButtonContent = slottedForm?.submitLabel || null;
+            if (!slottedForm) {
+                return;
+            }
+
+            this.headingContent = slottedForm.headline || null;
+            this.submitButtonContent = slottedForm.submitLabel || null;
+
+            slottedForm.visible = true;
         });
 
         this.addEventListener(EVENT_REFRESH, this.#refreshListener);

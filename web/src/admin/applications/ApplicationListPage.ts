@@ -5,7 +5,7 @@ import "#elements/ak-mdx/ak-mdx";
 import "#elements/buttons/SpinnerButton/ak-spinner-button";
 import "#elements/forms/DeleteBulkForm";
 import "#elements/forms/ModalForm";
-import "#elements/modals/ak-modal";
+import "#elements/dialogs/ak-modal";
 import "#admin/applications/ApplicationForm";
 import "#admin/applications/ApplicationWizardHint";
 

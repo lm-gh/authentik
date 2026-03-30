@@ -15,13 +15,13 @@
 
     --ak-fieldset--BorderColor: transparent;
 
-    --ak-c-command-palette__item--BackgroundColor: var(--ak-c-modal--BackgroundColor);
+    --ak-c-command-palette__item--BackgroundColor: var(--ak-c-dialog--BackgroundColor);
     --ak-c-command-palette__item--Color: var(--pf-global--palette--orange-50);
     --ak-c-command-palette__item--selected--BackgroundColor: var(--pf-global--palette--orange-50);
     --ak-c-command-palette__item--selected--Color: var(--pf-global--palette--orange-500);
 
     --ak-c-command-palette__item--hover--BackgroundColor: color-mix(
-        var(--ak-c-modal--BackgroundColor),
+        var(--ak-c-dialog--BackgroundColor),
         var(--pf-global--palette--orange-400) 90%
     );
     --ak-c-command-palette__item--hover-selected--BackgroundColor: color-mix(
@@ -144,7 +144,7 @@
 
 [part="results"] {
     overflow-y: auto;
-    max-height: calc(100dvh - (1.75 * var(--ak-c-modal--MarginBlockStart)));
+    max-height: calc(100dvh - (1.75 * var(--ak-c-dialog--MarginBlockStart)));
     overscroll-behavior: contain;
 
     @supports (scrollbar-width: thin) {
@@ -177,7 +177,7 @@
 [part="command-item-prefix"] {
     grid-row: icon / prefix;
     grid-column: icon / prefix;
-    line-height: calc(var(--ak-c-modal__title--LineHeight) + 1);
+    line-height: calc(var(--ak-c-dialog__title--LineHeight) + 1);
     color: var(--pf-global--palette--red-300);
     text-transform: uppercase;
     font-size: 0.7em;
@@ -187,7 +187,7 @@
 [part="command-item-suffix"] {
     grid-area: suffix;
     font-variant: all-small-caps;
-    line-height: calc(var(--ak-c-modal__title--LineHeight) + 0.05);
+    line-height: calc(var(--ak-c-dialog__title--LineHeight) + 0.05);
     font-weight: bold;
     display: flex;
     color: var(--pf-global--palette--gold-200);

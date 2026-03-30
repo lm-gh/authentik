@@ -2,11 +2,11 @@
     display: block;
 }
 
-.ak-c-modal:has([data-is="command-palette-modal"]) {
-    --ak-c-modal--MarginBlockStart: 25dvh;
-    --ak-c-modal--BackgroundColor: var(--pf-global--palette--orange-500);
-    --ak-c-modal--BorderColor: var(--pf-global--palette--orange-600);
-    --ak-c-modal__backdrop--active--BackdropFilter: blur(1px);
+.ak-c-dialog:has([data-is="command-palette-modal"]) {
+    --ak-c-dialog--MarginBlockStart: 25dvh;
+    --ak-c-dialog--BackgroundColor: var(--pf-global--palette--orange-500);
+    --ak-c-dialog--BorderColor: var(--pf-global--palette--orange-600);
+    --ak-c-dialog__backdrop--active--BackdropFilter: blur(1px);
 
     --ak-c-command-palette--BackdropFilter: blur(4px);
 

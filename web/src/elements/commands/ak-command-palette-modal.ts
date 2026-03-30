@@ -16,8 +16,8 @@ import {
     resolveCommandNamespace,
 } from "#elements/commands/shared";
 import { listen } from "#elements/decorators/listen";
-import { AKModal } from "#elements/modals/ak-modal";
-import { asInvoker, renderDialog } from "#elements/modals/utils";
+import { AKModal } from "#elements/dialogs/ak-modal";
+import { asInvoker, renderDialog } from "#elements/dialogs/utils";
 import { SlottedTemplateResult } from "#elements/types";
 import { ifPresent } from "#elements/utils/attributes";
 import { FocusTarget } from "#elements/utils/focus";

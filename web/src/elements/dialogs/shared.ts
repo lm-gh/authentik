@@ -40,13 +40,6 @@ export interface TransclusionElement extends Element {
     renderActions?(force?: boolean): SlottedTemplateResult;
 
     cancelButtonLabel?: string | null;
-
-    /**
-     * Whether the element should perform a viewport check before rendering.
-     *
-     * @deprecated Remove this after all modals are migrated to use the new dialog system, which handles this automatically.
-     */
-    viewportCheck?: boolean;
 }
 
 /**

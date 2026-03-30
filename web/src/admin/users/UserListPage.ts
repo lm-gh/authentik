@@ -19,10 +19,10 @@ import { userTypeToLabel } from "#common/labels";
 import { DefaultUIConfig } from "#common/ui/config";
 import { formatUserDisplayName } from "#common/users";
 
+import { modalInvoker } from "#elements/dialogs/utils";
 import { WithBrandConfig } from "#elements/mixins/branding";
 import { CapabilitiesEnum, WithCapabilitiesConfig } from "#elements/mixins/capabilities";
 import { WithSession } from "#elements/mixins/session";
-import { modalInvoker } from "#elements/modals/utils";
 import { getURLParam, updateURLParams } from "#elements/router/RouteMatch";
 import { PaginatedResponse, TableColumn, Timestamp } from "#elements/table/Table";
 import { TablePage } from "#elements/table/TablePage";

@@ -24,10 +24,10 @@ import {
     PaletteCommandNamespace,
 } from "#elements/commands/shared";
 import { listen } from "#elements/decorators/listen";
+import { renderDialog } from "#elements/dialogs/utils";
 import { WithCapabilitiesConfig } from "#elements/mixins/capabilities";
 import { WithNotifications } from "#elements/mixins/notifications";
 import { canAccessAdmin, WithSession } from "#elements/mixins/session";
-import { renderDialog } from "#elements/modals/utils";
 import { AKDrawerChangeEvent } from "#elements/notifications/events";
 import {
     DrawerState,

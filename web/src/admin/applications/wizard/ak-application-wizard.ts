@@ -1,6 +1,6 @@
 import "#admin/applications/wizard/ak-application-wizard-main";
 
-import { AKModal } from "#elements/modals/ak-modal";
+import { AKModal } from "#elements/dialogs/ak-modal";
 import { SlottedTemplateResult } from "#elements/types";
 
 import { WizardCloseEvent } from "#components/ak-wizard/events";

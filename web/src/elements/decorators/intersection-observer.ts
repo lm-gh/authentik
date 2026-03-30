@@ -2,6 +2,8 @@
  * @file Intersection Observer Decorator for LitElement
  */
 
+import { findNearestBoxTarget, isInViewport } from "#elements/utils/viewport";
+
 import { LitElement } from "lit";
 import { property } from "lit/decorators.js";
 
@@ -9,28 +11,6 @@ import { property } from "lit/decorators.js";
  * Type for the decorator
  */
 export type IntersectionDecorator = <T extends LitElement>(target: T, propertyKey: keyof T) => void;
-
-function findNearestBoxTarget(element?: Element | null): Element {
-    if (!element) {
-        return document.documentElement;
-    }
-
-    if (element.getClientRects().length) {
-        return element;
-    }
-
-    return findNearestBoxTarget(element.parentElement);
-}
-
-function isInViewport(element: Element): boolean {
-    const rect = element.getBoundingClientRect();
-    return (
-        rect.top < window.innerHeight &&
-        rect.bottom > 0 &&
-        rect.left < window.innerWidth &&
-        rect.right > 0
-    );
-}
 
 export interface LitElementWithDisplayBox extends LitElement {
     displayBox?: "contents" | "block";
@@ -104,14 +84,6 @@ export function intersectionObserver({
                 if (!intersecting && useAncestorBox) {
                     const boxTarget = findAndCacheBoxTarget(currentTarget);
                     intersecting = isInViewport(boxTarget);
-                    console.debug(
-                        "IntersectionObserver fallback for",
-                        currentTarget,
-                        "using box target",
-                        boxTarget,
-                        "isIntersecting:",
-                        intersecting,
-                    );
                 }
 
                 const cachedIntersecting = currentTarget[key];

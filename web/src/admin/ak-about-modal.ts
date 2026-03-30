@@ -3,10 +3,10 @@ import "#elements/ak-progress-bar";
 import { DEFAULT_CONFIG } from "#common/api/config";
 import { globalAK } from "#common/global";
 
+import { AKModal } from "#elements/dialogs/ak-modal";
+import { asInvoker } from "#elements/dialogs/utils";
 import { WithBrandConfig } from "#elements/mixins/branding";
 import { WithLicenseSummary } from "#elements/mixins/license";
-import { AKModal } from "#elements/modals/ak-modal";
-import { asInvoker } from "#elements/modals/utils";
 import { SlottedTemplateResult } from "#elements/types";
 import { ThemedImage } from "#elements/utils/images";
 
@@ -41,10 +41,11 @@ export class AboutModal extends WithLicenseSummary(WithBrandConfig(AKModal)) {
     public static override formatARIALabel = () => msg("About authentik");
 
     public static hostStyles = [
+        ...AKModal.hostStyles,
         css`
-            dialog.ak-c-modal:has(ak-about-modal) {
-                --ak-c-modal--BackgroundColor: var(--pf-global--palette--black-900);
-                --ak-c-modal--BorderColor: var(--pf-global--palette--black-600);
+            .ak-c-dialog:has(ak-about-modal) {
+                --ak-c-dialog--BackgroundColor: var(--pf-global--palette--black-900);
+                --ak-c-dialog--BorderColor: var(--pf-global--palette--black-600);
             }
         `,
     ];
@@ -58,7 +59,7 @@ export class AboutModal extends WithLicenseSummary(WithBrandConfig(AKModal)) {
             }
 
             .pf-c-about-modal-box {
-                --pf-c-about-modal-box--BackgroundColor: var(--ak-c-modal--BackgroundColor);
+                --pf-c-about-modal-box--BackgroundColor: var(--ak-c-dialog--BackgroundColor);
                 width: unset;
                 height: 100%;
                 max-height: unset;

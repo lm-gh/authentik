@@ -2,9 +2,9 @@
  * @file Modal and dialog rendering utilities.
  */
 
-import "#elements/modals/ak-modal";
+import "#elements/dialogs/ak-modal";
 
-import { AKModal } from "#elements/modals/ak-modal";
+import { AKModal } from "#elements/dialogs/ak-modal";
 import { SlottedTemplateResult } from "#elements/types";
 import { isAKElementConstructor } from "#elements/utils/unsafe";
 
@@ -92,7 +92,7 @@ export function renderDialog(
     }: DialogInit = {},
 ): Promise<void> {
     const dialog = ownerDocument.createElement("dialog");
-    dialog.classList.add("ak-c-modal", ...classList);
+    dialog.classList.add("ak-c-dialog", ...classList);
     dialog.closedBy = closedBy;
 
     const resolvers = Promise.withResolvers<void>();
