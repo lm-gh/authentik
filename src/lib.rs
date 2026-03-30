@@ -6,6 +6,7 @@ pub mod db;
 pub mod healthcheck;
 pub mod metrics;
 pub mod mode;
+pub mod outpost;
 #[cfg(feature = "core")]
 pub mod server;
 pub mod tls;

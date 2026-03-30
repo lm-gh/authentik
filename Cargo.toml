@@ -102,6 +102,8 @@ url = "= 2.5.8"
 uuid = { version = "= 1.23.0", features = ["serde", "v4"] }
 which = "= 8.0.2"
 
+authentik-client = { path = "./packages/client-rust" }
+
 [profile.dev.package.backtrace]
 opt-level = 3
 
@@ -235,8 +237,9 @@ license-file.workspace = true
 publish.workspace = true
 
 [features]
-default = ["core"]
+default = ["core", "proxy"]
 core = ["dep:sqlx", "dep:pyo3"]
+proxy = []
 
 [dependencies]
 arc-swap.workspace = true
@@ -275,6 +278,8 @@ tracing.workspace = true
 url.workspace = true
 uuid.workspace = true
 which.workspace = true
+
+authentik-client.workspace = true
 
 [lints]
 workspace = true

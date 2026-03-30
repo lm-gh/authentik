@@ -187,6 +187,7 @@ version = "2026.5.0-rc1"
 dependencies = [
  "arc-swap",
  "argh",
+ "authentik-client",
  "aws-lc-rs",
  "axum",
  "axum-server",
