@@ -224,6 +224,7 @@ export interface ModalInvokerInit extends DialogInit {
 class ModalInvokerDirective extends Directive {
     constructor(partInfo: PartInfo) {
         super(partInfo);
+
         if (partInfo.type !== PartType.ELEMENT) {
             throw new Error("modalOpener() can only be used on an element");
         }
@@ -298,11 +299,13 @@ export const modalInvoker = directive(ModalInvokerDirective);
 
 export type ModalInvokerDirectiveResult = DirectiveResult<typeof ModalInvokerDirective>;
 
+//#region Model Forms
+
 export interface ModelFormLike {
     instancePk?: string | number | null;
 }
 
-export interface ModelFormLikeConstructor {
+export interface ModelFormLikeConstructor extends CustomElementConstructor {
     new (): ModelFormLike;
 }
 
@@ -330,3 +333,44 @@ export function asEditModalInvoker(
         { ...init, deps: [instancePk] },
     );
 }
+
+/**
+ * Given a tag name, looks up the corresponding custom element constructor and returns it.
+ *
+ * @throws {TypeError} If no custom element is defined for the given tag name.
+ * @param tagName The tag name of the custom element to look up.
+ * @returns The custom element constructor associated with the given tag name.
+ */
+export function lookupElementConstructor<T extends CustomElementConstructor>(
+    tagName: string,
+    registry: CustomElementRegistry = window.customElements,
+): T {
+    const ElementConstructor = registry.get(tagName);
+
+    if (!ElementConstructor) {
+        throw new TypeError(`No custom element defined for tag name: ${tagName}`);
+    }
+
+    return ElementConstructor as unknown as T;
+}
+
+/**
+ * A helper function to create a modal invoker for editing an instance of a form-like element,
+ * given the tag name of the custom element.
+ *
+ * This is a convenience wrapper around {@linkcode asEditModalInvoker}
+ * that performs a lookup of the custom element constructor based on the provided tag name.
+ */
+export function asEditModalInvokerByTagName(
+    tagName: string,
+    instancePk?: string | number | null,
+    init?: ModalInvokerInit,
+): ModalInvokerDirectiveResult {
+    const ElementConstructor = lookupElementConstructor<ModelFormLikeConstructor>(tagName);
+
+    return asEditModalInvoker.call(ElementConstructor, instancePk, init);
+}
+
+//#endregion
+
+//#endregion

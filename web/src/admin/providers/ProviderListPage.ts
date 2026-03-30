@@ -13,16 +13,14 @@ import "#admin/providers/ssf/SSFProviderFormPage";
 import "#admin/providers/wsfed/WSFederationProviderForm";
 import "#elements/buttons/SpinnerButton/index";
 import "#elements/forms/DeleteBulkForm";
-import "#elements/forms/ModalForm";
 import "@patternfly/elements/pf-tooltip/pf-tooltip.js";
 
 import { DEFAULT_CONFIG } from "#common/api/config";
 
-import { CustomFormElementTagName } from "#elements/forms/unsafe";
+import { asEditModalInvokerByTagName } from "#elements/dialogs/utils";
 import { PaginatedResponse, TableColumn } from "#elements/table/Table";
 import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
-import { StrictUnsafe } from "#elements/utils/unsafe";
 
 import { Provider, ProvidersApi } from "@goauthentik/api";
 
@@ -114,25 +112,16 @@ export class ProviderListPage extends TablePage<Provider> {
             this.#rowApp(item),
             html`${item.verboseName}`,
             html`<div>
-                <ak-forms-modal>
-                    ${StrictUnsafe<CustomFormElementTagName>(item.component, {
-                        slot: "form",
-                        instancePk: item.pk,
-                        submitLabel: msg("Save Changes"),
-                        headline: msg(str`Update ${item.verboseName}`, {
-                            id: "form.headline.update",
-                        }),
-                    })}
-                    <button
-                        aria-label=${msg(str`Edit "${item.name}" provider`)}
-                        slot="trigger"
-                        class="pf-c-button pf-m-plain"
-                    >
-                        <pf-tooltip position="top" content=${msg("Edit")}>
-                            <i aria-hidden="true" class="fas fa-edit"></i>
-                        </pf-tooltip>
-                    </button>
-                </ak-forms-modal>
+                <button
+                    type="button"
+                    aria-label=${msg(str`Edit "${item.name}" provider`)}
+                    class="pf-c-button pf-m-plain"
+                    ${asEditModalInvokerByTagName(item.component, item.pk)}
+                >
+                    <pf-tooltip position="top" content=${msg("Edit")}>
+                        <i aria-hidden="true" class="fas fa-edit"></i>
+                    </pf-tooltip>
+                </button>
             </div>`,
         ];
     }
