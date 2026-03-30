@@ -170,6 +170,11 @@ export class Form<T = Record<string, unknown>, D = T>
     @property({ type: String, useDefault: true })
     public headline?: string | null = null;
 
+    /**
+     * The label for the submit button. If not provided,
+     * a default label will be generated based on `entitySingular`,
+     * falling back to "Create".
+     */
     @property({ type: String, attribute: "action-label", useDefault: true })
     public submitLabel: string | null = null;
 
@@ -481,6 +486,17 @@ export class Form<T = Record<string, unknown>, D = T>
         });
     };
 
+    protected dispatchSubmit = (): void => {
+        return this.doSubmit(
+            new SubmitEvent("submit", {
+                submitter: this,
+                cancelable: true,
+                bubbles: true,
+                composed: true,
+            }),
+        );
+    };
+
     //#endregion
 
     //#endregion
@@ -561,6 +577,18 @@ export class Form<T = Record<string, unknown>, D = T>
         });
     }
 
+    public renderSubmitButton(submitLabel = this.submitLabel): SlottedTemplateResult {
+        return html`<button
+            type="button"
+            class="pf-c-button pf-m-primary"
+            @click=${this.dispatchSubmit}
+            part="submit-button"
+            aria-description=${msg("Submit action")}
+        >
+            ${this.formatSubmitLabel(submitLabel)}
+        </button>`;
+    }
+
     /**
      * An overridable method for rendering the form actions.
      *
@@ -577,24 +605,7 @@ export class Form<T = Record<string, unknown>, D = T>
             }
 
             return html`<div part="form-actions" class="pf-c-card__footer">
-                <button
-                    type="button"
-                    class="pf-c-button pf-m-primary"
-                    @click=${() => {
-                        this.doSubmit(
-                            new SubmitEvent("submit", {
-                                submitter: this,
-                                cancelable: true,
-                                bubbles: true,
-                                composed: true,
-                            }),
-                        );
-                    }}
-                    part="submit-button"
-                    aria-description=${msg("Submit action")}
-                >
-                    ${this.formatSubmitLabel(submitLabel)}
-                </button>
+                ${this.renderSubmitButton()}
             </div>`;
         });
     }
