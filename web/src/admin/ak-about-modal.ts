@@ -102,15 +102,7 @@ export class AboutModal extends WithLicenseSummary(WithBrandConfig(AKModal)) {
         const versionPromise = this.#api.adminVersionRetrieve();
         const systemInfoPromise = this.#api.adminSystemRetrieve();
 
-        this.refreshPromise = Promise.all([
-            versionPromise,
-            systemInfoPromise,
-            // new Promise((resolve) => {
-            //     setTimeout(() => {
-            //         versionPromise.then(resolve);
-            //     }, 190_000);
-            // }),
-        ]).then((result) => {
+        this.refreshPromise = Promise.all([versionPromise, systemInfoPromise]).then((result) => {
             this.version = result[0];
             this.systemInfo = result[1];
 
