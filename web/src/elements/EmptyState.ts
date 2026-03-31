@@ -88,7 +88,7 @@ export class EmptyState extends AKElement implements IEmptyState {
     }
 
     render() {
-        const hasHeading = this.hasSlotted(null);
+        const hasHeading = this.findSlotted(null);
         const loading = this.loading || this.defaultLabel;
         const classes = {
             "pf-c-empty-state": true,
@@ -112,12 +112,12 @@ export class EmptyState extends AKElement implements IEmptyState {
                           <slot></slot>
                       </h1>`
                     : nothing}
-                ${this.hasSlotted("body")
+                ${this.findSlotted("body")
                     ? html` <div part="body" class="pf-c-empty-state__body">
                           <slot name="body"></slot>
                       </div>`
                     : nothing}
-                ${this.hasSlotted("primary")
+                ${this.findSlotted("primary")
                     ? html` <div part="primary" class="pf-c-empty-state__primary">
                           <slot name="primary"></slot>
                       </div>`

@@ -61,6 +61,7 @@ export abstract class WizardStep extends AKElement {
             }
 
             .pf-c-wizard__main-body {
+                display: flex;
                 height: stretch;
             }
         `,

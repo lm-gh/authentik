@@ -256,16 +256,24 @@ export class AKElement extends LitElement implements AKElementProps {
         }
     }
 
-    protected hasSlotted(name: string | null) {
+    /**
+     * Finds a slotted element by name, ensuring that it is not nested within another slotted element.
+     *
+     * @param name The name of the slot to find. Use `null` to find elements in the default slot.
+     * @return The slotted element, or `null` if no matching element is found.
+     */
+    protected findSlotted<T extends Element = Element>(name: string | null): T | null {
         const isNotNestedSlot = (start: Element) => {
             let node = start.parentNode;
+
             while (node && node !== this) {
                 if (node instanceof Element && node.hasAttribute("slot")) {
-                    return false;
+                    return null;
                 }
                 node = node.parentNode;
             }
-            return true;
+
+            return node;
         };
 
         // All child slots accessible from the component's LightDOM that match the request
@@ -279,7 +287,9 @@ export class AKElement extends LitElement implements AKElementProps {
 
         // All child slots accessible from the LightDom that match the request *and* are not nested
         // within another slotted element.
-        return allChildSlotRequests.filter((node) => isNotNestedSlot(node)).length > 0;
+        const match = allChildSlotRequests.find((node) => isNotNestedSlot(node));
+
+        return (match ?? null) as T | null;
     }
 
     //#endregion

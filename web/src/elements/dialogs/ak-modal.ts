@@ -536,7 +536,7 @@ export class AKModal extends AKElement {
      */
     protected renderHeader(): SlottedTemplateResult {
         const { headline, slottedElement } = this;
-        const hasHeaderSlot = this.hasSlotted("header");
+        const hasHeaderSlot = this.findSlotted("header");
 
         return guard([headline, hasHeaderSlot, slottedElement], () => {
             if (!headline && !hasHeaderSlot && !slottedElement) {
@@ -567,7 +567,7 @@ export class AKModal extends AKElement {
      */
     protected renderActions(): SlottedTemplateResult {
         const { slottedElement } = this;
-        const hasActionsSlot = this.hasSlotted("actions");
+        const hasActionsSlot = this.findSlotted("actions");
         return guard([hasActionsSlot, slottedElement], () => {
             if (!hasActionsSlot && !slottedElement) {
                 return null;

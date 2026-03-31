@@ -24,10 +24,12 @@ import { property } from "lit/decorators.js";
 
 @customElement("ak-endpoint-connector-wizard")
 export class EndpointConnectorWizard extends AKModal {
+    #api = new EndpointsApi(DEFAULT_CONFIG);
+
     public static override formatARIALabel = () => msg("Endpoint Connector Creation Wizard");
 
     @property({ attribute: false })
-    public connectorTypes: TypeCreate[] = [];
+    public connectorTypes: TypeCreate[] | null = null;
 
     protected wizardRef = createRef<Wizard>();
 
@@ -37,7 +39,11 @@ export class EndpointConnectorWizard extends AKModal {
     public override firstUpdated(changedProperties: PropertyValues<this>): void {
         super.firstUpdated(changedProperties);
 
-        new EndpointsApi(DEFAULT_CONFIG).endpointsConnectorsTypesList().then((types) => {
+        this.refresh();
+    }
+
+    public async refresh(): Promise<void> {
+        return this.#api.endpointsConnectorsTypesList().then((types) => {
             this.connectorTypes = types;
         });
     }
@@ -83,18 +89,24 @@ export class EndpointConnectorWizard extends AKModal {
                         </p>
                     </div>
                 </ak-wizard-page-type-create>
-                ${this.connectorTypes.map((type) => {
-                    return html`
-                        <ak-wizard-page-form
-                            slot=${`type-${type.component}-${type.modelName}`}
-                            label=${msg(str`Create ${type.name}`)}
-                        >
-                            ${StrictUnsafe(type.component)}
-                        </ak-wizard-page-form>
-                    `;
-                })}
+                ${this.renderConnectorForms()}
             </ak-wizard>
         `;
+    }
+
+    protected renderConnectorForms(): SlottedTemplateResult {
+        if (!this.connectorTypes) {
+            return null;
+        }
+
+        return this.connectorTypes.map((type) => {
+            return html`<ak-wizard-page-form
+                slot=${`type-${type.component}-${type.modelName}`}
+                label=${msg(str`Create ${type.name}`)}
+            >
+                ${StrictUnsafe(type.component)}
+            </ak-wizard-page-form>`;
+        });
     }
 }
 

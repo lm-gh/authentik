@@ -15,5 +15,6 @@
 @import "./components/Form/form.css";
 @import "./components/Switch/switch.css";
 @import "./components/Select/select.css";
+@import "./components/Skeleton/skeleton.css";
 @import "./components/Notification/notification.css";
 @import "./components/Wizard/wizard.css";

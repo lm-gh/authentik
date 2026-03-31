@@ -2,14 +2,16 @@ import "#elements/LicenseNotice";
 import "#elements/Alert";
 
 import { WithLicenseSummary } from "#elements/mixins/license";
+import { SlottedTemplateResult } from "#elements/types";
 import { WizardPage } from "#elements/wizard/WizardPage";
 
 import { TypeCreate } from "@goauthentik/api";
 
 import { msg, str } from "@lit/localize";
-import { css, CSSResult, html, nothing, TemplateResult } from "lit";
+import { css, CSSResult, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
+import { guard } from "lit/directives/guard.js";
 import { createRef, ref, Ref } from "lit/directives/ref.js";
 
 import PFCard from "@patternfly/patternfly/components/Card/card.css";
@@ -27,14 +29,14 @@ export enum TypeCreateWizardPageLayouts {
 export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
     //#region Properties
 
-    @property({ attribute: false })
-    types: TypeCreate[] = [];
+    @property({ attribute: false, useDefault: true })
+    public types: TypeCreate[] | null = null;
 
-    @property({ attribute: false })
+    @property({ attribute: false, useDefault: true })
     public selectedType: TypeCreate | null = null;
 
-    @property({ type: String })
-    layout: TypeCreateWizardPageLayouts = TypeCreateWizardPageLayouts.list;
+    @property({ type: String, useDefault: true })
+    public layout: TypeCreateWizardPageLayouts = TypeCreateWizardPageLayouts.list;
 
     //#endregion
 
@@ -45,6 +47,11 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
         PFCard,
         PFPage,
         css`
+            :host {
+                display: flex;
+                flex-flow: column;
+            }
+
             .pf-c-card__header-main img {
                 max-height: 2em;
                 min-height: 2em;
@@ -60,7 +67,7 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
 
     //#region Refs
 
-    formRef: Ref<HTMLFormElement> = createRef();
+    protected formRef: Ref<HTMLFormElement> = createRef();
 
     //#endregion
 
@@ -93,127 +100,159 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
         );
     };
 
-    protected renderGrid(): TemplateResult {
-        return html`${this.hasSlotted("above-form")
-                ? html`<div class="pf-c-page__main-section"><slot name="above-form"></slot></div>`
-                : nothing}
-            <div
-                role="listbox"
-                aria-label="${msg("Select a provider type")}"
-                class="pf-l-grid pf-m-gutter"
-                data-ouid-component-type="ak-type-create-grid"
-            >
-                ${this.types.map((type, idx) => {
-                    const disabled = !!(type.requiresEnterprise && !this.hasEnterpriseLicense);
-
-                    const selected = this.selectedType === type;
-
-                    return html`<div
-                        class=${classMap({
-                            "pf-l-grid__item": true,
-                            "pf-m-3-col": true,
-                            "pf-c-card": true,
-                            "pf-m-non-selectable-raised": disabled,
-                            "ak-m-enterprise-only": disabled,
-                            "pf-m-selectable-raised": !disabled,
-                            "pf-m-selected-raised": selected,
-                        })}
-                        tabindex=${idx}
-                        role="option"
-                        aria-disabled="${disabled ? "true" : "false"}"
-                        aria-selected="${selected ? "true" : "false"}"
-                        aria-label="${type.name}"
-                        aria-describedby="${type.description}"
-                        @click=${() => {
-                            if (disabled) return;
-
-                            this.#selectDispatch(type);
-                            this.selectedType = type;
-                        }}
-                    >
-                        ${type.iconUrl
-                            ? html`<div role="presentation" class="pf-c-card__header">
-                                  <div role="presentation" class="pf-c-card__header-main">
-                                      <img
-                                          aria-hidden="true"
-                                          src=${type.iconUrl}
-                                          alt=${msg(str`${type.name} Icon`)}
-                                      />
-                                  </div>
-                              </div>`
-                            : nothing}
-                        <div role="heading" aria-level="2" class="pf-c-card__title">
-                            ${type.name}
-                        </div>
-                        <div role="presentational" class="pf-c-card__body">${type.description}</div>
-                        ${disabled
-                            ? html`<div class="pf-c-card__footer">
-                                  <ak-license-notice></ak-license-notice>
-                              </div> `
-                            : nothing}
-                    </div>`;
-                })}
-            </div>`;
-    }
-
-    renderList(): TemplateResult {
-        return html`${this.hasSlotted("above-form")
-                ? html`<div class="pf-c-page__main-section"><slot name="above-form"></slot></div>`
-                : nothing}
-            <form
-                ${ref(this.formRef)}
-                class="pf-c-form pf-m-horizontal"
-                role="radiogroup"
-                aria-label=${msg("Select a provider type")}
-            >
-                ${this.types.map((type) => {
-                    const disabled = !!(type.requiresEnterprise && !this.hasEnterpriseLicense);
-                    const inputID = `${type.component}-${type.modelName}`;
-                    const selected = this.selectedType === type;
-
-                    return html`<div class="pf-c-radio">
-                        <input
-                            class="pf-c-radio__input"
-                            type="radio"
-                            name="type"
-                            id=${`${inputID}`}
-                            aria-label=${type.name}
-                            aria-describedby=${`${inputID}-description`}
-                            @change=${() => {
-                                this.#selectDispatch(type);
-                            }}
-                            ?disabled=${disabled}
-                        />
-                        <label
-                            aria-selected="${selected ? "true" : "false"}"
-                            aria-labelledby="${inputID}"
-                            class="pf-c-radio__label"
-                            for="${inputID}"
-                            >${type.name}</label
-                        >
-                        <span id="${inputID}-description" class="pf-c-radio__description"
-                            >${type.description}
-                            ${disabled ? html`<ak-license-notice></ak-license-notice>` : nothing}
-                            ${type.deprecated
-                                ? html`<ak-alert class="pf-c-radio__description" inline plain>
-                                      ${msg("This type is deprecated.")}
-                                  </ak-alert>`
-                                : nothing}
-                        </span>
-                    </div>`;
-                })}
-            </form>`;
-    }
-
-    render(): TemplateResult {
-        switch (this.layout) {
-            case TypeCreateWizardPageLayouts.grid:
-                return this.renderGrid();
-            case TypeCreateWizardPageLayouts.list:
-                return this.renderList();
-            default:
-                throw new TypeError(`Unknown layout: ${this.layout}`);
+    protected renderGridItems(): SlottedTemplateResult {
+        if (!this.types?.length) {
+            return null;
         }
+
+        return this.types.map((type, idx) => {
+            const disabled = !!(type.requiresEnterprise && !this.hasEnterpriseLicense);
+
+            const selected = this.selectedType === type;
+            const inputID = `${type.component}-${type.modelName}`;
+
+            return html`<div
+                class=${classMap({
+                    "pf-l-grid__item": true,
+                    "pf-m-3-col": true,
+                    "pf-c-card": true,
+                    "pf-m-non-selectable-raised": disabled,
+                    "ak-m-enterprise-only": disabled,
+                    "pf-m-selectable-raised": !disabled,
+                    "pf-m-selected-raised": selected,
+                })}
+                tabindex=${idx}
+                role="option"
+                data-component=${type.component}
+                data-model-name=${type.modelName}
+                aria-disabled="${disabled ? "true" : "false"}"
+                aria-selected="${selected ? "true" : "false"}"
+                aria-label=${type.name}
+                aria-describedby=${`${inputID}-description`}
+                @click=${() => {
+                    if (disabled) return;
+
+                    this.#selectDispatch(type);
+                    this.selectedType = type;
+                }}
+            >
+                ${type.iconUrl
+                    ? html`<div role="presentation" class="pf-c-card__header">
+                          <div role="presentation" class="pf-c-card__header-main">
+                              <img
+                                  aria-hidden="true"
+                                  src=${type.iconUrl}
+                                  alt=${msg(str`${type.name} Icon`)}
+                              />
+                          </div>
+                      </div>`
+                    : nothing}
+                <div role="heading" aria-level="2" class="pf-c-card__title">${type.name}</div>
+                <div class="pf-c-card__body" id=${`${inputID}-description`}>
+                    ${type.description}
+                </div>
+                ${disabled
+                    ? html`<div class="pf-c-card__footer">
+                          <ak-license-notice></ak-license-notice>
+                      </div> `
+                    : nothing}
+            </div>`;
+        });
+    }
+
+    protected renderGrid(): SlottedTemplateResult {
+        if (!this.types?.length) {
+            return html`<div class="ak-c-loading-skeleton ak-m-grid"></div>`;
+        }
+
+        return html`<div
+            role="listbox"
+            aria-label="${msg("Select a provider type")}"
+            class="pf-l-grid pf-m-gutter"
+            data-ouid-component-type="ak-type-create-grid"
+        >
+            ${this.renderGridItems()}
+        </div>`;
+    }
+
+    protected renderListItems(): SlottedTemplateResult {
+        if (!this.types?.length) {
+            return null;
+        }
+
+        return this.types.map((type) => {
+            const disabled = !!(type.requiresEnterprise && !this.hasEnterpriseLicense);
+            const inputID = `${type.component}-${type.modelName}`;
+            const selected = this.selectedType === type;
+
+            return html`<div class="pf-c-radio">
+                <input
+                    class="pf-c-radio__input"
+                    type="radio"
+                    name="type"
+                    id=${inputID}
+                    aria-label=${type.name}
+                    aria-describedby=${`${inputID}-description`}
+                    @change=${() => {
+                        this.#selectDispatch(type);
+                    }}
+                    ?disabled=${disabled}
+                />
+                <label
+                    aria-selected="${selected ? "true" : "false"}"
+                    aria-labelledby="${inputID}"
+                    class="pf-c-radio__label"
+                    for="${inputID}"
+                    >${type.name}</label
+                >
+                <span id="${inputID}-description" class="pf-c-radio__description"
+                    >${type.description}
+                    ${disabled ? html`<ak-license-notice></ak-license-notice>` : nothing}
+                    ${type.deprecated
+                        ? html`<ak-alert class="pf-c-radio__description" inline plain>
+                              ${msg("This type is deprecated.")}
+                          </ak-alert>`
+                        : nothing}
+                </span>
+            </div>`;
+        });
+    }
+
+    protected renderList(): SlottedTemplateResult {
+        if (!this.types?.length) {
+            return html`<div class="ak-c-loading-skeleton ak-m-list"></div>`;
+        }
+
+        return html`<form
+            ${ref(this.formRef)}
+            class="pf-c-form pf-m-horizontal"
+            role="radiogroup"
+            aria-label=${msg("Select a provider type")}
+        >
+            ${this.renderListItems()}
+        </form>`;
+    }
+
+    render(): SlottedTemplateResult {
+        const { layout } = this;
+
+        const content = guard([layout, this.types], () => {
+            switch (layout) {
+                case TypeCreateWizardPageLayouts.grid:
+                    return this.renderGrid();
+                case TypeCreateWizardPageLayouts.list:
+                    return this.renderList();
+                default:
+                    throw new TypeError(`Unknown layout: ${layout}`);
+            }
+        });
+
+        return [
+            this.findSlotted("above-form")
+                ? html`<div class="pf-c-page__main-section"><slot name="above-form"></slot></div>`
+                : null,
+            content,
+        ];
     }
 }
 
