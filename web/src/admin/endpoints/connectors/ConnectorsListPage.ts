@@ -13,6 +13,8 @@ import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 
+import { EndpointConnectorWizard } from "#admin/endpoints/connectors/ConnectorWizard";
+
 import { Connector, EndpointsApi } from "@goauthentik/api";
 
 import { msg, str } from "@lit/localize";
@@ -66,8 +68,17 @@ export class ConnectorsListPage extends TablePage<Connector> {
         ];
     }
 
-    renderObjectCreate() {
-        return html`<ak-endpoint-connector-wizard></ak-endpoint-connector-wizard> `;
+    protected override renderObjectCreate(): SlottedTemplateResult {
+        return html`
+            <button
+                class="pf-c-button pf-m-primary"
+                type="button"
+                aria-description="${msg("Open the wizard to create a new connector.")}"
+                ${EndpointConnectorWizard.asModalInvoker()}
+            >
+                ${msg("New Connector")}
+            </button>
+        `;
     }
 
     renderToolbarSelected() {

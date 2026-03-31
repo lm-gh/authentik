@@ -8,7 +8,8 @@ import "#elements/wizard/Wizard";
 
 import { DEFAULT_CONFIG } from "#common/api/config";
 
-import { AKElement } from "#elements/Base";
+import { AKModal } from "#elements/dialogs/ak-modal";
+import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 import { TypeCreateWizardPageLayouts } from "#elements/wizard/TypeCreateWizardPage";
 import { Wizard } from "#elements/wizard/Wizard";
@@ -17,34 +18,54 @@ import { EndpointsApi, TypeCreate } from "@goauthentik/api";
 
 import { msg, str } from "@lit/localize";
 import { customElement } from "@lit/reactive-element/decorators/custom-element.js";
-import { CSSResult, html, TemplateResult } from "lit";
-import { property, query } from "lit/decorators.js";
-
-import PFButton from "@patternfly/patternfly/components/Button/button.css";
+import { html, PropertyValues } from "lit";
+import { createRef, ref } from "lit-html/directives/ref.js";
+import { property } from "lit/decorators.js";
 
 @customElement("ak-endpoint-connector-wizard")
-export class EndpointConnectorWizard extends AKElement {
-    static styles: CSSResult[] = [PFButton];
-
-    @property()
-    createText = msg("Create");
+export class EndpointConnectorWizard extends AKModal {
+    public static override formatARIALabel = () => msg("Endpoint Connector Creation Wizard");
 
     @property({ attribute: false })
-    connectorTypes: TypeCreate[] = [];
+    public connectorTypes: TypeCreate[] = [];
 
-    @query("ak-wizard")
-    wizard?: Wizard;
+    protected wizardRef = createRef<Wizard>();
 
-    firstUpdated(): void {
+    public get wizard(): Wizard | null {
+        return this.wizardRef.value || null;
+    }
+    public override firstUpdated(changedProperties: PropertyValues<this>): void {
+        super.firstUpdated(changedProperties);
+
         new EndpointsApi(DEFAULT_CONFIG).endpointsConnectorsTypesList().then((types) => {
             this.connectorTypes = types;
         });
     }
 
-    render(): TemplateResult {
+    protected initialSteps = ["initial"];
+
+    protected typeSelectListener = (ev: CustomEvent<TypeCreate>) => {
+        const { wizard } = this;
+
+        if (!wizard) return;
+
+        const idx = wizard.steps.indexOf("initial") + 1;
+        // Exclude all current steps starting with type-,
+        // this happens when the user selects a type and then goes back
+        wizard.steps = wizard.steps.filter((step) => !step.startsWith("type-"));
+        wizard.steps.splice(idx, 0, `type-${ev.detail.component}-${ev.detail.modelName}`);
+        wizard.isValid = true;
+    };
+
+    protected override renderCloseButton(): SlottedTemplateResult {
+        return null;
+    }
+
+    protected override render(): SlottedTemplateResult {
         return html`
             <ak-wizard
-                .steps=${["initial"]}
+                ${ref(this.wizardRef)}
+                .steps=${this.initialSteps}
                 header=${msg("New connector")}
                 description=${msg("Create a new connector.")}
             >
@@ -52,21 +73,7 @@ export class EndpointConnectorWizard extends AKElement {
                     slot="initial"
                     .types=${this.connectorTypes}
                     layout=${TypeCreateWizardPageLayouts.grid}
-                    @select=${(ev: CustomEvent<TypeCreate>) => {
-                        if (!this.wizard) return;
-                        const idx = this.wizard.steps.indexOf("initial") + 1;
-                        // Exclude all current steps starting with type-,
-                        // this happens when the user selects a type and then goes back
-                        this.wizard.steps = this.wizard.steps.filter(
-                            (step) => !step.startsWith("type-"),
-                        );
-                        this.wizard.steps.splice(
-                            idx,
-                            0,
-                            `type-${ev.detail.component}-${ev.detail.modelName}`,
-                        );
-                        this.wizard.isValid = true;
-                    }}
+                    @select=${this.typeSelectListener}
                 >
                     <div slot="above-form">
                         <p>
@@ -86,7 +93,6 @@ export class EndpointConnectorWizard extends AKElement {
                         </ak-wizard-page-form>
                     `;
                 })}
-                <button slot="trigger" class="pf-c-button pf-m-primary">${this.createText}</button>
             </ak-wizard>
         `;
     }

@@ -16,3 +16,56 @@ export function resolveInterface<T extends HTMLElement = LitElement>(ownerDocume
 
     return element;
 }
+
+/**
+ * Given a node, finds the nearest parent element, traversing through shadow DOM and document fragments if necessary.
+ *
+ * @param node The node to find the nearest parent element for.
+ */
+export function findClosestHost<T extends Element = Element | HTMLElement>(
+    node: Node | ShadowRoot | DocumentFragment | null,
+): T | null {
+    let current = node;
+
+    while (current) {
+        if (current instanceof Element && current.parentElement instanceof Element) {
+            return current.parentElement as unknown as T;
+        }
+
+        if (current.parentNode instanceof ShadowRoot) {
+            return current.parentNode.host as T;
+        }
+
+        if (current.parentNode instanceof DocumentFragment) {
+            current = current.parentNode;
+            continue;
+        }
+
+        return null;
+    }
+
+    return null;
+}
+
+/**
+ * Given a node, finds the nearest parent element that matches the provided predicate, traversing through shadow DOM and document fragments if necessary.
+ *
+ * @param node The node to find the nearest parent element for.
+ * @param predicate A function that takes an element and returns a boolean indicating whether it matches the desired criteria.
+ */
+export function findClosestHostMatch<T extends Element = Element | HTMLElement>(
+    node: Node,
+    predicate: (element: Element) => boolean,
+): T | null {
+    let current = findClosestHost(node);
+
+    while (current) {
+        if (predicate(current)) {
+            return current as unknown as T;
+        }
+
+        current = findClosestHost(current);
+    }
+
+    return null;
+}

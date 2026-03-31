@@ -17,6 +17,8 @@ import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 
+import { SourceWizard } from "#admin/sources/SourceWizard";
+
 import { Source, SourcesApi } from "@goauthentik/api";
 
 import { msg, str } from "@lit/localize";
@@ -119,8 +121,17 @@ export class SourceListPage extends TablePage<Source> {
         ];
     }
 
-    renderObjectCreate(): TemplateResult {
-        return html`<ak-source-wizard> </ak-source-wizard> `;
+    protected override renderObjectCreate(): SlottedTemplateResult {
+        return html`
+            <button
+                class="pf-c-button pf-m-primary"
+                type="button"
+                aria-description="${msg("Open the wizard to create a new source.")}"
+                ${SourceWizard.asModalInvoker()}
+            >
+                ${msg("New Source")}
+            </button>
+        `;
     }
 }
 

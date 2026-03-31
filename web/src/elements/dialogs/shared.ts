@@ -24,6 +24,11 @@ export interface TransclusionElement extends Element {
     displayBox?: "contents" | "block";
 
     /**
+     * Whether the element is considered visible for the purposes of rendering in a dialog or other container.
+     */
+    visible?: boolean;
+
+    /**
      * An optional method to render a header for the element, which can be used
      * when the element is transcluded into a dialog or other container that supports headers.
      *

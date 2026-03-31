@@ -150,8 +150,6 @@ export class DevRepeatedRequestsMiddleware implements Middleware, Disposable {
                 },
                 true,
             );
-
-            this.#logger.trace("Repeated request", reqSig);
         }
 
         if (this.#requests.length > this.maxRequests) {

@@ -1,17 +1,12 @@
-:host {
-    display: grid;
-    grid-template-rows: [header] auto [body] 1fr [footer] auto;
-}
-
 /* #region Buttons */
 
-:host > .pf-c-button {
+.ak-c-dialog__close-button {
     position: absolute;
     top: var(--ak-c-dialog--c-button--Top);
     right: var(--ak-c-dialog--c-button--Right);
 }
 
-:host > .pf-c-button + .ak-c-dialog__header {
+.ak-c-dialog__close-button + .ak-c-dialog__header {
     margin-right: var(--ak-c-dialog--c-button--sibling--MarginRight);
 }
 
@@ -84,8 +79,6 @@
 /* #region Body */
 
 .ak-c-dialog__body {
-    flex: 1 1 auto;
-
     max-height: var(--ak-c-dialog__body--MaxHeight);
     min-height: var(--ak-c-dialog__body--MinHeight);
     padding-top: var(--ak-c-dialog__body--PaddingTop);
@@ -96,10 +89,6 @@
     overscroll-behavior: contain;
     word-break: break-word;
     -webkit-overflow-scrolling: touch;
-    max-height: calc(
-        75dvh - 2rem - var(--ak-c-dialog__header--PaddingTop) -
-            var(--ak-c-dialog__footer--PaddingBottom)
-    );
 }
 
 .ak-c-dialog__body:last-child {

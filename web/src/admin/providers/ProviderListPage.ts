@@ -22,6 +22,8 @@ import { PaginatedResponse, TableColumn } from "#elements/table/Table";
 import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 
+import { AKProviderWizard } from "#admin/providers/ProviderWizard";
+
 import { Provider, ProvidersApi } from "@goauthentik/api";
 
 import { msg, str } from "@lit/localize";
@@ -126,8 +128,17 @@ export class ProviderListPage extends TablePage<Provider> {
         ];
     }
 
-    override renderObjectCreate(): TemplateResult {
-        return html`<ak-provider-wizard> </ak-provider-wizard> `;
+    protected override renderObjectCreate(): SlottedTemplateResult {
+        return html`
+            <button
+                class="pf-c-button pf-m-primary"
+                type="button"
+                aria-description="${msg("Open the wizard to create a new provider.")}"
+                ${AKProviderWizard.asModalInvoker()}
+            >
+                ${msg("New Provider")}
+            </button>
+        `;
     }
 }
 

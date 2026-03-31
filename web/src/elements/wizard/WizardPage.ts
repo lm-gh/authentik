@@ -1,7 +1,8 @@
 import { AKElement } from "#elements/Base";
+import { SlottedTemplateResult } from "#elements/types";
 import { Wizard } from "#elements/wizard/Wizard";
 
-import { html, LitElement, PropertyDeclaration, TemplateResult } from "lit";
+import { LitElement, PropertyDeclaration } from "lit";
 import { property } from "lit/decorators.js";
 
 /**
@@ -17,6 +18,8 @@ export type WizardPageActiveCallback = () => void | Promise<void>;
 export type WizardPageNextCallback = () => boolean | Promise<boolean>;
 
 export abstract class WizardPage extends AKElement {
+    protected defaultSlot = this.ownerDocument.createElement("slot");
+
     /**
      * The label to display in the sidebar for this page.
      *
@@ -69,8 +72,8 @@ export abstract class WizardPage extends AKElement {
         return super.requestUpdate(name, oldValue, options);
     }
 
-    render(): TemplateResult {
-        return html`<slot></slot>`;
+    render(): SlottedTemplateResult {
+        return this.defaultSlot;
     }
 }
 

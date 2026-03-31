@@ -55,13 +55,13 @@ export abstract class WizardStep extends AKElement {
         PFContent,
         PFTitle,
         css`
-            .ak-wizard-box {
-                height: 75%;
-                height: 75vh;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-                z-index: 500;
+            :host {
+                display: block;
+                height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
+            }
+
+            .pf-c-wizard__main-body {
+                height: stretch;
             }
         `,
     ];
@@ -312,37 +312,35 @@ export abstract class WizardStep extends AKElement {
             return nothing;
         }
 
-        return html`<div class="pf-c-modal-box ak-wizard-box">
-            <div class="pf-c-wizard">
-                <header class="pf-c-wizard__header" data-ouid-component-id="wizard-header">
-                    ${this.canCancel ? this.renderHeaderCancelIcon() : nothing}
-                    <h1 class="pf-c-title pf-m-3xl pf-c-wizard__title" data-test-id="wizard-title">
-                        ${this.wizardTitle}
-                    </h1>
-                    <p class="pf-c-wizard__description">${this.wizardDescription}</p>
-                </header>
+        return html`<div class="pf-c-wizard">
+            <header class="pf-c-wizard__header" data-ouid-component-id="wizard-header">
+                ${this.canCancel ? this.renderHeaderCancelIcon() : nothing}
+                <h1 class="pf-c-title pf-m-3xl pf-c-wizard__title" data-test-id="wizard-title">
+                    ${this.wizardTitle}
+                </h1>
+                <p class="pf-c-wizard__description">${this.wizardDescription}</p>
+            </header>
 
-                <div class="pf-c-wizard__outer-wrap">
-                    <div class="pf-c-wizard__inner-wrap">
-                        <aside
-                            class="pf-c-wizard__nav"
-                            role="group"
-                            aria-label="${msg("Wizard steps")}"
-                        >
-                            <ol class="pf-c-wizard__nav-list">
-                                ${map(this.wizardStepState.stepLabels, this.renderSidebarStep)}
-                            </ol>
-                        </aside>
-                        <main class="pf-c-wizard__main">
-                            <div id="main-content" class="pf-c-wizard__main-body">
-                                ${this.renderMain()}
-                            </div>
-                        </main>
-                    </div>
-                    <nav class="pf-c-wizard__footer" aria-label="${msg("Wizard navigation")}">
-                        ${this.buttons.map(this.renderButton)}
-                    </nav>
+            <div class="pf-c-wizard__outer-wrap">
+                <div class="pf-c-wizard__inner-wrap">
+                    <aside
+                        class="pf-c-wizard__nav"
+                        role="group"
+                        aria-label="${msg("Wizard steps")}"
+                    >
+                        <ol class="pf-c-wizard__nav-list">
+                            ${map(this.wizardStepState.stepLabels, this.renderSidebarStep)}
+                        </ol>
+                    </aside>
+                    <main class="pf-c-wizard__main">
+                        <div id="main-content" class="pf-c-wizard__main-body">
+                            ${this.renderMain()}
+                        </div>
+                    </main>
                 </div>
+                <nav class="pf-c-wizard__footer" aria-label="${msg("Wizard navigation")}">
+                    ${this.buttons.map(this.renderButton)}
+                </nav>
             </div>
         </div>`;
     }

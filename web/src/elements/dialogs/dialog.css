@@ -2,13 +2,23 @@
 
 .ak-c-dialog {
     --ak-c-dialog--BackgroundColor: var(--pf-global--BackgroundColor--100);
+
     --ak-c-dialog--BoxShadow: var(--pf-global--BoxShadow--xl);
+
     --ak-c-dialog--ZIndex: var(--pf-global--ZIndex--xl);
+
     --ak-c-dialog--Width: 100%;
     --ak-c-dialog--MaxWidth: calc(100% - var(--pf-global--spacer--xl));
+
+    --ak-c-dialog--Ratio: calc(3 / 4);
+    --ak-c-dialog--AspectRatioHeight: calc(var(--ak-c-dialog--Width) * var(--ak-c-dialog--Ratio));
+    --ak-c-dialog--MaxHeight: 75dvh;
+
     --ak-c-dialog--MarginBlockStart: auto;
     --ak-c-dialog--BorderColor: var(--pf-global--BackgroundColor--150);
+
     --ak-c-dialog--BorderWidth: 0;
+
     --ak-c-dialog__backdrop--BackgroundColor: transparent;
     --ak-c-dialog__backdrop--BackdropFilter: blur(0);
     --ak-c-dialog__backdrop--active--BackgroundColor: hsla(0, 0%, 0%, 0.5);
@@ -97,6 +107,9 @@
     z-index: var(--ak-c-dialog--ZIndex);
     width: var(--ak-c-dialog--Width);
     max-width: var(--ak-c-dialog--MaxWidth);
+
+    max-height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
+
     background-color: var(--ak-c-dialog--BackgroundColor);
     box-shadow: var(--ak-c-dialog--BoxShadow);
 
@@ -126,30 +139,26 @@
 
     opacity: 0;
     transform: translateY(1em);
+}
 
-    &::backdrop {
-        backdrop-filter: var(--ak-c-dialog__backdrop--BackdropFilter);
-        background-color: var(--ak-c-dialog__backdrop--BackgroundColor);
+.ak-c-dialog::backdrop {
+    backdrop-filter: var(--ak-c-dialog__backdrop--BackdropFilter);
+    background-color: var(--ak-c-dialog__backdrop--BackgroundColor);
 
-        transition:
-            backdrop-filter,
-            overlay allow-discrete,
-            background-color;
+    transition:
+        backdrop-filter,
+        overlay allow-discrete,
+        background-color;
 
-        transition-timing-function: ease-in-out;
-        transition-duration: var(--ak-c-dialog--TransitionDuration--Backdrop);
-    }
+    transition-timing-function: ease-in-out;
+    transition-duration: var(--ak-c-dialog--TransitionDuration--Backdrop);
+}
 
-    &.fade-in {
-        --ak-c-dialog__backdrop--BackdropFilter: var(
-            --ak-c-dialog__backdrop--active--BackdropFilter
-        );
-        --ak-c-dialog__backdrop--BackgroundColor: var(
-            --ak-c-dialog__backdrop--active--BackgroundColor
-        );
+.ak-c-dialog.fade-in {
+    --ak-c-dialog__backdrop--BackdropFilter: var(--ak-c-dialog__backdrop--active--BackdropFilter);
+    --ak-c-dialog__backdrop--BackgroundColor: var(--ak-c-dialog__backdrop--active--BackgroundColor);
 
-        opacity: 1;
-    }
+    opacity: 1;
 }
 
 .ak-c-dialog[open] {
@@ -235,13 +244,19 @@
 
 /* #region Content */
 
-.ak-c-dialog__modal ::part(toolbar) {
+.ak-c-dialog__content {
+    display: grid;
+    grid-template-rows: [header] auto [body] 1fr [footer] auto;
+    max-height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
+}
+
+.ak-c-dialog__content ::part(toolbar) {
     position: var(--ak-c-dialog--toolbar--Position, sticky);
     inset-block-start: var(--ak-c-dialog--toolbar--InsetBlockStart, 0);
     z-index: var(--ak-c-dialog--toolbar--ZIndex, 1);
 }
 
-.ak-c-dialog__modal [slot="before-body"] {
+.ak-c-dialog__content [slot="before-body"] {
     margin-block-end: 1rem;
 }
 

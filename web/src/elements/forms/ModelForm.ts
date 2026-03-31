@@ -71,7 +71,11 @@ export abstract class ModelForm<
      */
     #loadedAt: Date | null = null;
 
-    @property({ attribute: "pk", converter: { fromAttribute: (value) => value as PKT } })
+    @property({
+        attribute: "pk",
+        useDefault: true,
+        converter: { fromAttribute: (value) => value as PKT },
+    })
     public instancePk: PKT | null = null;
 
     @property({ attribute: false, useDefault: true })
@@ -84,8 +88,7 @@ export abstract class ModelForm<
 
         this.instance = null;
         this.instancePk = null;
-
-        this.requestUpdate();
+        this.error = null;
     }
 
     public createDefaultInstance(): T | null {
@@ -110,48 +113,44 @@ export abstract class ModelForm<
 
     //#region Lifecycle
 
-    /**
-     * Timestamp of when a fetch was requested, but deferred due to the table not being visible.
-     */
-    #deferredRefreshRequestAt: Date | null = null;
+    protected doLoad() {
+        if (this.#loadedAt || this.loading) {
+            return Promise.resolve();
+        }
+
+        if (this.load) {
+            this.loading = true;
+        }
+
+        const loadPromise = this.load?.() || Promise.resolve(true);
+
+        return loadPromise
+            .then((result) => {
+                this.#loadedAt = new Date();
+
+                if (result === false) {
+                    this.logger.debug("Load method returned false, skipping instance load");
+                    return;
+                }
+
+                return this.refresh();
+            })
+            .catch(this.delegateError)
+            .finally(() => {
+                this.loading = false;
+            });
+    }
 
     @listen(AKRefreshEvent, {
         target: null,
     })
-    protected synchronizeRefreshSchedule(): Promise<void> {
-        if (!this.visible) {
-            if (!this.#deferredRefreshRequestAt) {
-                this.#deferredRefreshRequestAt = new Date();
-            }
-
-            return Promise.resolve();
-        }
-
-        if (!this.#deferredRefreshRequestAt) {
-            return Promise.resolve();
-        }
-
-        return this.refresh();
-    }
-
     public refresh = async (): Promise<void> => {
-        if (!this.instancePk) return;
+        if (!this.instancePk) {
+            this.logger.info("Skipping refresh. No instance PK provided.");
+            return;
+        }
 
         this.loading = true;
-
-        if (!this.#loadedAt && this.load) {
-            const result = await this.load().catch((error) => {
-                this.loading = false;
-
-                return this.delegateError(error);
-            });
-
-            if (result === false) {
-                return;
-            }
-
-            this.#loadedAt = new Date();
-        }
 
         return this.loadInstance(this.instancePk)
             .then((instance) => {
@@ -171,14 +170,19 @@ export abstract class ModelForm<
         super.updated(changedProperties);
 
         const hasPK = !!(changedProperties.has("instancePk") && this.instancePk);
-        const visible = changedProperties.has("visible") && this.visible;
 
-        if (hasPK || visible) {
-            this.synchronizeRefreshSchedule();
+        if (hasPK) {
+            this.logger.debug("Instance PK changed, refreshing form", {
+                instancePk: this.instancePk,
+            });
         }
     }
 
     protected override render(): SlottedTemplateResult {
+        if (!this.visible) {
+            return null;
+        }
+
         if (this.loading) {
             return html`<ak-empty-state loading></ak-empty-state>`;
         }
@@ -188,6 +192,10 @@ export abstract class ModelForm<
                 <span>${msg("An error occurred while loading the form.")}</span>
                 <div slot="body">${pluckErrorDetail(this.error)}</div>
             </ak-empty-state>`;
+        }
+
+        if (!this.#loadedAt) {
+            this.doLoad();
         }
 
         return super.render();

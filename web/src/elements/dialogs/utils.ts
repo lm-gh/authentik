@@ -4,6 +4,8 @@
 
 import "#elements/dialogs/ak-modal";
 
+import { checkShallowEquality } from "#common/collections";
+
 import { AKModal } from "#elements/dialogs/ak-modal";
 import { SlottedTemplateResult } from "#elements/types";
 import { isAKElementConstructor } from "#elements/utils/unsafe";
@@ -233,23 +235,11 @@ class ModalInvokerDirective extends Directive {
     #cleanup: (() => void) | null = null;
     #prevDeps: unknown[] | null = null;
 
-    /**
-     * Shallow-compare new deps against the previously stored deps.
-     *
-     * Returns `true` if deps match (i.e. we should skip rebinding).
-     * Returns `false` if deps are absent, previously unset, or any value differs.
-     */
-    #depsMatch(newDeps: unknown[] | undefined): boolean {
-        if (!newDeps || !this.#prevDeps) return false;
-        if (this.#prevDeps.length !== newDeps.length) return false;
-        return this.#prevDeps.every((prev, i) => prev === newDeps[i]);
-    }
-
-    update(part: ElementPart, [factory, options]: ModalDirectiveParameters): void {
+    public update(part: ElementPart, [factory, options]: ModalDirectiveParameters): void {
         const deps = options?.deps;
 
-        // Deps provided and unchanged — skip rebind
-        if (this.#depsMatch(deps)) {
+        if (checkShallowEquality(deps, this.#prevDeps)) {
+            // Skip rebind
             return;
         }
 

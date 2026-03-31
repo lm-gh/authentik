@@ -90,7 +90,7 @@ export class AKModal extends AKElement {
      */
     protected scrollContainerRef = createRef<HTMLElement>();
 
-    protected get scrollContainer(): HTMLElement {
+    protected get scrollContainer(): Element {
         return this.scrollContainerRef.value || this;
     }
 
@@ -130,6 +130,7 @@ export class AKModal extends AKElement {
 
     protected defaultSlot: HTMLSlotElement;
     protected beforeBodySlot: HTMLSlotElement;
+    protected dialogBody: HTMLDivElement;
 
     @state()
     protected slottedElement: TransclusionElement | null = null;
@@ -288,7 +289,7 @@ export class AKModal extends AKElement {
 
         requestAnimationFrame(() => {
             this.#closing = false;
-            this.#hostResizeObserver.unobserve(this);
+            this.#hostResizeObserver.unobserve(this.scrollContainer);
             window.removeEventListener("resize", this.resetHeight);
             this.resetHeight();
         });
@@ -371,6 +372,15 @@ export class AKModal extends AKElement {
 
         this.beforeBodySlot = this.ownerDocument.createElement("slot");
         this.beforeBodySlot.name = "before-body";
+
+        this.dialogBody = this.ownerDocument.createElement("div");
+        this.dialogBody.classList.add("ak-c-dialog__body");
+        this.dialogBody.setAttribute("part", "body");
+        this.dialogBody.appendChild(this.defaultSlot);
+
+        this.addEventListener("command", (event) => {
+            this.logger.debug("Command event received", { event });
+        });
     }
 
     public override connectedCallback(): void {
@@ -395,7 +405,7 @@ export class AKModal extends AKElement {
         dialogElement.classList.add("ak-c-dialog", this.size);
 
         // eslint-disable-next-line wc/no-self-class
-        this.classList.add("ak-c-dialog__modal");
+        this.classList.add("ak-c-dialog__content");
 
         dialogElement.addEventListener("cancel", this.cancelListener);
         dialogElement.addEventListener("click", this.backdropClickListener, { passive: true });
@@ -426,6 +436,10 @@ export class AKModal extends AKElement {
         if (nextSlottedElement && nextSlottedElement !== this.slottedElement) {
             if (nextSlottedElement.displayBox) {
                 nextSlottedElement.displayBox = "contents";
+            }
+
+            if ("visible" in nextSlottedElement) {
+                nextSlottedElement.visible = true;
             }
 
             this.slottedElement = nextSlottedElement;
@@ -504,7 +518,7 @@ export class AKModal extends AKElement {
     protected renderCloseButton(): SlottedTemplateResult {
         return html`<button
             @click=${this.closeListener}
-            class="pf-c-button pf-m-plain"
+            class="pf-c-button pf-m-plain ak-c-dialog__close-button"
             type="button"
             aria-label=${msg("Close dialog")}
         >
@@ -582,8 +596,7 @@ export class AKModal extends AKElement {
      * @abstract
      */
     protected render(): unknown {
-        return html`${this.beforeBodySlot}
-            <div class="ak-c-dialog__body" part="body">${this.defaultSlot}</div>`;
+        return [this.beforeBodySlot, this.dialogBody];
     }
 
     //#endregion

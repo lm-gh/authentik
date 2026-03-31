@@ -11,3 +11,18 @@ export function torusIndex(lengthLike: number | ArrayLike<number>, delta: number
 
     return ((delta % length) + length) % length;
 }
+
+/**
+ * Shallow-compare new deps against the previously stored deps.
+ *
+ * Returns `true` if deps match (i.e. we should skip rebinding).
+ * Returns `false` if deps are absent, previously unset, or any value differs.
+ */
+export function checkShallowEquality(
+    newDeps?: unknown[] | null,
+    prevDeps?: unknown[] | null,
+): boolean {
+    if (!newDeps || !prevDeps) return false;
+    if (prevDeps.length !== newDeps.length) return false;
+    return prevDeps.every((prev, i) => prev === newDeps[i]);
+}

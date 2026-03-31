@@ -1,8 +1,10 @@
 import "#elements/wizard/ActionWizardPage";
+import "#elements/LoadingOverlay";
 
 import { EVENT_REFRESH } from "#common/constants";
 
-import { ModalButton } from "#elements/buttons/ModalButton";
+import { AKElement } from "#elements/Base";
+import { findClosestHostMatch } from "#elements/utils/render-roots";
 import { WizardPage } from "#elements/wizard/WizardPage";
 
 import { msg } from "@lit/localize";
@@ -12,6 +14,8 @@ import { css, CSSResult, html, nothing, TemplateResult } from "lit";
 import { state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
+import PFButton from "@patternfly/patternfly/components/Button/button.css";
+import PFTitle from "@patternfly/patternfly/components/Title/title.css";
 import PFWizard from "@patternfly/patternfly/components/Wizard/wizard.css";
 
 export interface WizardAction {
@@ -23,13 +27,19 @@ export interface WizardAction {
 export const ApplyActionsSlot = "apply-actions";
 
 @customElement("ak-wizard")
-export class Wizard extends ModalButton {
+export class Wizard extends AKElement {
     static styles: CSSResult[] = [
-        ...super.styles,
+        PFButton,
+        PFTitle,
         PFWizard,
         css`
-            .pf-c-modal-box {
-                height: 75%;
+            :host {
+                display: block;
+                height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
+            }
+
+            .pf-c-wizard__main-body {
+                height: stretch;
             }
         `,
     ];
@@ -40,13 +50,13 @@ export class Wizard extends ModalButton {
      * Whether the wizard can be cancelled.
      */
     @property({ type: Boolean })
-    canCancel = true;
+    public canCancel = true;
 
     /**
      * Whether the wizard can go back to the previous step.
      */
     @property({ type: Boolean })
-    canBack = true;
+    public canBack = true;
 
     /**
      * Header title of the wizard.
@@ -79,6 +89,11 @@ export class Wizard extends ModalButton {
     public state: { [key: string]: unknown } = {};
 
     //#endregion
+
+    @state()
+    protected loading = false;
+
+    protected loadingOverlay = this.ownerDocument.createElement("ak-loading-overlay");
 
     //#region State
 
@@ -191,11 +206,19 @@ export class Wizard extends ModalButton {
     /**
      * Reset the wizard to its initial state.
      */
-    #reset = (event?: Event) => {
+    protected cleanup = (event?: Event) => {
         event?.preventDefault();
         event?.stopPropagation();
 
-        this.open = false;
+        const nearestDialog = findClosestHostMatch<HTMLDialogElement>(
+            this,
+            (element) => element instanceof HTMLDialogElement,
+        );
+
+        if (nearestDialog) {
+            nearestDialog.requestClose();
+            return;
+        }
 
         for (const element of this.querySelectorAll("[data-wizardmanaged=true]")) {
             element.remove();
@@ -227,7 +250,7 @@ export class Wizard extends ModalButton {
 
     //#region Rendering
 
-    public renderModalInner(): TemplateResult {
+    protected render(): TemplateResult {
         const { activeStepIndex, lastPage } = this.#gatherSteps();
 
         const navigatePrevious = () => {
@@ -242,15 +265,22 @@ export class Wizard extends ModalButton {
             if (!this.activeStepElement) return;
 
             if (this.activeStepElement.nextCallback) {
+                this.loading = true;
+
                 const completedStep = await this.activeStepElement.nextCallback();
+
+                this.loading = false;
 
                 if (!completedStep) return;
 
                 if (lastPage) {
-                    await this.finalHandler?.();
-                    this.#reset();
+                    const promise = this.finalHandler?.() || Promise.resolve();
 
-                    return;
+                    return promise
+                        .then(() => this.cleanup())
+                        .finally(() => {
+                            this.loading = false;
+                        });
                 }
             }
 
@@ -269,7 +299,7 @@ export class Wizard extends ModalButton {
                           class="pf-c-button pf-m-plain pf-c-wizard__close"
                           type="button"
                           aria-label="${msg("Close wizard")}"
-                          @click=${this.#reset}
+                          @click=${this.cleanup}
                       >
                           <i class="fas fa-times" aria-hidden="true"></i>
                       </button>`
@@ -294,6 +324,7 @@ export class Wizard extends ModalButton {
             </header>
 
             <div role="presentation" class="pf-c-wizard__outer-wrap">
+                ${this.loading ? this.loadingOverlay : null}
                 <div class="pf-c-wizard__inner-wrap">
                     <nav aria-label="${msg("Wizard steps")}" class="pf-c-wizard__nav">
                         <ol role="presentation" class="pf-c-wizard__nav-list">
@@ -330,12 +361,12 @@ export class Wizard extends ModalButton {
                 </div>
                 <nav class="pf-c-wizard__footer" aria-label="${msg("Wizard navigation")}">
                     ${this.canCancel
-                        ? html`<div class="pf-c-wizard__footer-abort">
+                        ? html`<div class="pf-c-wizard__footer-cancel">
                               <button
                                   data-test-id="wizard-navigation-cancel"
                                   class="pf-c-button pf-m-link"
                                   type="button"
-                                  @click=${this.#reset}
+                                  @click=${this.cleanup}
                               >
                                   ${msg("Cancel")}
                               </button>

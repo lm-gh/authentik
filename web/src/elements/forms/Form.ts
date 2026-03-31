@@ -12,7 +12,6 @@ import {
 import { APIMessage, MessageLevel } from "#common/messages";
 
 import { AKElement } from "#elements/Base";
-import { intersectionObserver } from "#elements/decorators/intersection-observer";
 import { TransclusionElement, TransclusionSymbol } from "#elements/dialogs/shared";
 import {
     DialogInit,
@@ -30,6 +29,7 @@ import { serializeForm } from "#elements/forms/serialization";
 import { showMessage } from "#elements/messages/MessageContainer";
 import { SlottedTemplateResult } from "#elements/types";
 import { createFileMap } from "#elements/utils/inputs";
+import { isInViewport } from "#elements/utils/viewport";
 
 import { ConsoleLogger } from "#logger/browser";
 
@@ -161,11 +161,31 @@ export class Form<T = Record<string, unknown>, D = T>
 
     //#region Properties
 
+    #cachedVisibility: boolean | null = null;
+
     /**
      * Whether the table is visible in the viewport.
+     *
+     * @remarks
+     * We cache the visibility between frames to avoid the synchronous `getBoundingClientRect()`
+     * call within {@linkcode isInViewport}.
+     *
      */
-    @intersectionObserver()
-    public visible = false;
+    public get visible() {
+        if (this.#cachedVisibility === null) {
+            this.#cachedVisibility = isInViewport(this);
+
+            requestAnimationFrame(() => {
+                this.#cachedVisibility = null;
+            });
+        }
+
+        return this.#cachedVisibility;
+    }
+
+    public set visible(value: boolean) {
+        this.#cachedVisibility = value;
+    }
 
     @property({ type: String })
     public successMessage?: string;

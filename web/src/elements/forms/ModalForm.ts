@@ -172,8 +172,6 @@ export class ModalForm extends ModalButton {
 
             this.headingContent = slottedForm.headline || null;
             this.submitButtonContent = slottedForm.submitLabel || null;
-
-            slottedForm.visible = true;
         });
 
         this.addEventListener(EVENT_REFRESH, this.#refreshListener);

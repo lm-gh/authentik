@@ -10,7 +10,7 @@ import "#elements/wizard/Wizard";
 
 import { DEFAULT_CONFIG } from "#common/api/config";
 
-import { AKElement } from "#elements/Base";
+import { AKModal } from "#elements/dialogs/ak-modal";
 import { CustomFormElementTagName } from "#elements/forms/unsafe";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 import { TypeCreateWizardPageLayouts } from "#elements/wizard/TypeCreateWizardPage";
@@ -20,15 +20,11 @@ import { SourcesApi, TypeCreate } from "@goauthentik/api";
 
 import { msg, str } from "@lit/localize";
 import { customElement } from "@lit/reactive-element/decorators/custom-element.js";
-import { CSSResult, html, TemplateResult } from "lit";
+import { html, TemplateResult } from "lit";
 import { property, query } from "lit/decorators.js";
 
-import PFButton from "@patternfly/patternfly/components/Button/button.css";
-
 @customElement("ak-source-wizard")
-export class SourceWizard extends AKElement {
-    static styles: CSSResult[] = [PFButton];
-
+export class SourceWizard extends AKModal {
     @property({ attribute: false })
     sourceTypes: TypeCreate[] = [];
 
@@ -74,7 +70,6 @@ export class SourceWizard extends AKElement {
                         </ak-wizard-page-form>
                     `;
                 })}
-                <button slot="trigger" class="pf-c-button pf-m-primary">${msg("Create")}</button>
             </ak-wizard>
         `;
     }

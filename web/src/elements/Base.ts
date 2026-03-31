@@ -10,7 +10,6 @@ import { applyUITheme, ResolvedUITheme, resolveUITheme, ThemeChangeEvent } from 
 import AKBase from "#styles/authentik/base.css" with { type: "bundled-text" };
 import PFBase from "#styles/patternfly/base.css" with { type: "bundled-text" };
 
-import { localized } from "@lit/localize";
 import { CSSResult, CSSResultGroup, CSSResultOrNative, LitElement, PropertyValues } from "lit";
 import { property } from "lit/decorators.js";
 
@@ -33,7 +32,6 @@ export interface AKElementProps {
     activeTheme: ResolvedUITheme;
 }
 
-@localized()
 export class AKElement extends LitElement implements AKElementProps {
     //#region Static Properties
 
@@ -48,13 +46,21 @@ export class AKElement extends LitElement implements AKElementProps {
      * This is useful if the element is a wrapper around a third-party component
      * that requires styles to be applied to the host, such as Patternfly's modals.
      */
-    public static hostStyles?: Array<CSSResult | CSSModule>;
+    public static get hostStyles(): CSSResultOrNative[] {
+        return this.hostStyleSheets ?? [];
+    }
 
-    private static hostStyleSheets: CSSStyleSheet[] | null = null;
+    public static set hostStyles(styles: CSSResultOrNative[]) {
+        this.hostStyleSheets = styles.map(createStyleSheetUnsafe);
+    }
+
+    /**
+     * A cache of the element's host styles, converted to {@linkcode CSSStyleSheet}
+     * instances to avoid duplicated references.
+     */
+    protected static hostStyleSheets: CSSStyleSheet[] | null = null;
 
     protected static override finalizeStyles(styles: CSSResultGroup = []): CSSResultOrNative[] {
-        this.hostStyleSheets = this.hostStyles ? this.hostStyles.map(createStyleSheetUnsafe) : null;
-
         const elementStyles = [
             $PFBase,
             // Route around TSC`s known-to-fail typechecking of `.flat(Infinity)`. Removes types.
@@ -69,6 +75,26 @@ export class AKElement extends LitElement implements AKElementProps {
         const elementSet = new Set(elementStyles.reverse());
         // Reverse again because the return type is an array, and process as a CSSResult
         return Array.from(elementSet).reverse().map(createCSSResult);
+    }
+
+    protected static attachHostStyles(rootNode: ShadowRoot): void {
+        const { hostStyleSheets } = this;
+
+        if (!hostStyleSheets) return;
+
+        setAdoptedStyleSheets(rootNode, (currentStyleSheets) => {
+            return [...currentStyleSheets, ...hostStyleSheets];
+        });
+    }
+
+    protected static detachHostStyles(rootNode: ShadowRoot): void {
+        const { hostStyleSheets } = this;
+
+        if (!hostStyleSheets) return;
+
+        setAdoptedStyleSheets(rootNode, (currentStyleSheets) => {
+            return currentStyleSheets.filter((sheet) => !hostStyleSheets.includes(sheet));
+        });
     }
 
     //#endregion
@@ -126,13 +152,7 @@ export class AKElement extends LitElement implements AKElementProps {
         const rootNode = this.getRootNode();
 
         if (rootNode instanceof ShadowRoot) {
-            const { hostStyleSheets } = this.constructor as typeof AKElement;
-
-            if (hostStyleSheets) {
-                setAdoptedStyleSheets(rootNode, (currentStyleSheets) => {
-                    return [...currentStyleSheets, ...hostStyleSheets];
-                });
-            }
+            (this.constructor as typeof AKElement).attachHostStyles(rootNode);
         }
     }
 
@@ -142,13 +162,7 @@ export class AKElement extends LitElement implements AKElementProps {
         const rootNode = this.getRootNode();
 
         if (rootNode instanceof ShadowRoot) {
-            const { hostStyleSheets } = this.constructor as typeof AKElement;
-
-            if (hostStyleSheets) {
-                setAdoptedStyleSheets(rootNode, (currentStyleSheets) => {
-                    return currentStyleSheets.filter((sheet) => !hostStyleSheets.includes(sheet));
-                });
-            }
+            (this.constructor as typeof AKElement).detachHostStyles(rootNode);
         }
 
         super.disconnectedCallback();
