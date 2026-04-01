@@ -122,6 +122,7 @@ name = "authentik-common"
 version = "2026.5.0-rc1"
 dependencies = [
  "arc-swap",
+ "aws-lc-rs",
  "axum-server",
  "config",
  "eyre",
@@ -129,6 +130,7 @@ dependencies = [
  "nix",
  "notify",
  "pin-project-lite",
+ "rustls",
  "serde",
  "serde_json",
  "tempfile",
