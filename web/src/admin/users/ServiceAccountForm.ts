@@ -63,7 +63,9 @@ export class ServiceAccountForm extends Form<UserServiceAccountRequest> {
             userServiceAccountRequest: data,
         });
         this.result = result;
-        (this.parentElement as ModalForm).showSubmitButton = false;
+        if (this.parentElement instanceof ModalForm) {
+            this.parentElement.showSubmitButton = false;
+        }
         if (this.targetGroup) {
             await new CoreApi(DEFAULT_CONFIG).coreGroupsAddUserCreate({
                 groupUuid: this.targetGroup.pk,
@@ -88,7 +90,9 @@ export class ServiceAccountForm extends Form<UserServiceAccountRequest> {
         this.result = null;
 
         this.expiresAt = new Date(Date.now() + EXPIRATION_DURATION);
-        (this.parentElement as ModalForm).showSubmitButton = true;
+        if (this.parentElement instanceof ModalForm) {
+            this.parentElement.showSubmitButton = true;
+        }
     }
 
     //#region Event Listeners

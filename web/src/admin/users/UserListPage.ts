@@ -1,6 +1,6 @@
 import "#admin/reports/ExportButton";
-import "#admin/users/ServiceAccountForm";
 import "#admin/users/UserActiveForm";
+import "#admin/users/UserWizard";
 import "#admin/users/UserBulkRevokeSessionsForm";
 import "#admin/users/UserForm";
 import "#admin/users/UserImpersonateForm";
@@ -28,7 +28,6 @@ import { PaginatedResponse, TableColumn, Timestamp } from "#elements/table/Table
 import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 
-import { ServiceAccountForm } from "#admin/users/ServiceAccountForm";
 import { UserForm } from "#admin/users/UserForm";
 import { UserImpersonateForm } from "#admin/users/UserImpersonateForm";
 
@@ -383,27 +382,9 @@ export class UserListPage extends WithBrandConfig(
         </dl>`;
     }
 
-    protected openNewUserModal = () => {
-        const form = new UserForm();
-
-        form.defaultPath = this.activePath;
-
-        form.showModal();
-    };
-
     renderObjectCreate(): TemplateResult {
         return html`
-            <button class="pf-c-button pf-m-primary" @click=${this.openNewUserModal}>
-                ${msg("New User")}
-            </button>
-            <button
-                class="pf-c-button pf-m-secondary"
-                ${ServiceAccountForm.asModalInvoker({
-                    closedBy: "none",
-                })}
-            >
-                ${msg("New Service Account")}
-            </button>
+            <ak-user-wizard .defaultPath=${this.activePath}></ak-user-wizard>
             <ak-reports-export-button
                 .createExport=${(params: CoreUsersExportCreateRequest) => {
                     return new CoreApi(DEFAULT_CONFIG).coreUsersExportCreate(params);

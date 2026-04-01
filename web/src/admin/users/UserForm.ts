@@ -16,7 +16,7 @@ import { CoreApi, Group, RbacApi, Role, User, UserTypeEnum } from "@goauthentik/
 import YAML from "yaml";
 
 import { msg, str } from "@lit/localize";
-import { css, CSSResult, html, TemplateResult } from "lit";
+import { css, CSSResult, html, nothing, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -56,6 +56,9 @@ export class UserForm extends ModelForm<User, number> {
     @property()
     defaultPath: string = "users";
 
+    @property({ attribute: false })
+    userType?: UserTypeEnum;
+
     static get defaultUserAttributes(): { [key: string]: unknown } {
         return {};
     }
@@ -94,6 +97,9 @@ export class UserForm extends ModelForm<User, number> {
     async send(data: User): Promise<User> {
         if (data.attributes === null) {
             data.attributes = UserForm.defaultUserAttributes;
+        }
+        if (this.userType !== undefined) {
+            data.type = this.userType;
         }
         let user;
         if (this.instance?.pk) {
@@ -152,28 +158,30 @@ export class UserForm extends ModelForm<User, number> {
                 help=${msg("The user's display name.")}
             ></ak-text-input>
 
-            <ak-radio-input
-                label=${msg("User type")}
-                required
-                name="type"
-                .value=${this.instance?.type}
-                .options=${[
-                    ...UserTypeOptions,
-                    ...(this.instance
-                        ? [
-                              {
-                                  label: msg("Internal Service account"),
-                                  value: UserTypeEnum.InternalServiceAccount,
-                                  disabled: true,
-                                  description: html`${msg(
-                                      "Managed by authentik and cannot be assigned manually.",
-                                  )}`,
-                              },
-                          ]
-                        : []),
-                ] satisfies RadioOption<UserTypeEnum>[]}
-            >
-            </ak-radio-input>
+            ${this.userType === undefined
+                ? html`<ak-radio-input
+                      label=${msg("User type")}
+                      required
+                      name="type"
+                      .value=${this.instance?.type}
+                      .options=${[
+                          ...UserTypeOptions,
+                          ...(this.instance
+                              ? [
+                                    {
+                                        label: msg("Internal Service account"),
+                                        value: UserTypeEnum.InternalServiceAccount,
+                                        disabled: true,
+                                        description: html`${msg(
+                                            "Managed by authentik and cannot be assigned manually.",
+                                        )}`,
+                                    },
+                                ]
+                              : []),
+                      ] satisfies RadioOption<UserTypeEnum>[]}
+                  >
+                  </ak-radio-input>`
+                : nothing}
             <ak-text-input
                 name="email"
                 label=${msg("Email Address")}
