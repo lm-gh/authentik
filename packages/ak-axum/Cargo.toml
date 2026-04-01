@@ -14,6 +14,7 @@ ak-common.workspace = true
 axum.workspace = true
 durstr.workspace = true
 eyre.workspace = true
+tokio.workspace = true
 tower-http.workspace = true
 tower.workspace = true
 tracing.workspace = true
