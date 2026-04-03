@@ -1,5 +1,6 @@
 .pf-c-wizard {
     --pf-c-wizard__nav--ZIndex: var(--pf-global--ZIndex--md);
+    --pf-c-wizard__close--Right: var(--pf-global--spacer--md);
 }
 
 .pf-c-wizard__footer-cancel {

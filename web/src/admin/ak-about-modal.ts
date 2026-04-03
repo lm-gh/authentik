@@ -38,7 +38,7 @@ function renderEntry([label, content = null]: AboutEntry): SlottedTemplateResult
 
 @customElement("ak-about-modal")
 export class AboutModal extends WithLicenseSummary(WithBrandConfig(AKModal)) {
-    public static override formatARIALabel = () => msg("About authentik");
+    public override formatARIALabel = () => msg("About authentik");
 
     public static hostStyles = [
         ...AKModal.hostStyles,

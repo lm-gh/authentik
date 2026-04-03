@@ -141,9 +141,7 @@ export abstract class ModelForm<
             });
     }
 
-    @listen(AKRefreshEvent, {
-        target: null,
-    })
+    @listen(AKRefreshEvent)
     public refresh = async (): Promise<void> => {
         if (!this.instancePk) {
             this.logger.info("Skipping refresh. No instance PK provided.");

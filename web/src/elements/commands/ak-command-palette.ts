@@ -39,7 +39,11 @@ export class AKCommandPalette extends AKElement {
         this.dialog.appendChild(this.defaultSlot);
     }
 
-    @listen("keydown", { passive: false, capture: true })
+    @listen("keydown", {
+        target: window,
+        passive: false,
+        capture: true,
+    })
     protected keydownListener = (event: KeyboardEvent) => {
         if (!this.activationKeys.has(event.key) || (!event.metaKey && !event.ctrlKey)) {
             return;

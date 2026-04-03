@@ -1,6 +1,6 @@
 import "#admin/groups/ak-group-form";
 import "#admin/policies/PolicyBindingForm";
-import "#admin/policies/PolicyWizard";
+import "#admin/policies/ak-policy-wizard";
 import "#admin/rbac/ObjectPermissionModal";
 import "#admin/users/UserForm";
 import "#components/ak-status-label";
@@ -12,11 +12,13 @@ import { DEFAULT_CONFIG } from "#common/api/config";
 import { PFSize } from "#common/enums";
 import { PolicyBindingCheckTarget, PolicyBindingCheckTargetToLabel } from "#common/policies/utils";
 
+import { modalInvoker } from "#elements/dialogs/utils";
 import { CustomFormElementTagName } from "#elements/forms/unsafe";
 import { PaginatedResponse, Table, TableColumn } from "#elements/table/Table";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 
+import { AKPolicyWizard } from "#admin/policies/ak-policy-wizard";
 import { PolicyBindingForm, PolicyBindingNotice } from "#admin/policies/PolicyBindingForm";
 import { policyEngineModes } from "#admin/policies/PolicyEngineModes";
 import { UserForm } from "#admin/users/UserForm";
@@ -26,7 +28,6 @@ import { ModelEnum, PoliciesApi, PolicyBinding } from "@goauthentik/api";
 import { msg, str } from "@lit/localize";
 import { css, CSSResult, html, nothing, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 @customElement("ak-bound-policies-list")
 export class BoundPoliciesList<T extends PolicyBinding = PolicyBinding> extends Table<T> {
@@ -176,6 +177,29 @@ export class BoundPoliciesList<T extends PolicyBinding = PolicyBinding> extends 
         </ak-forms-delete-bulk>`;
     }
 
+    protected renderNewPolicyButton(): SlottedTemplateResult {
+        return html`<button
+            class="pf-c-button pf-m-primary"
+            type="button"
+            aria-description="${msg("Open the wizard to create a new policy.")}"
+            ${modalInvoker(
+                () => {
+                    const wizard = new AKPolicyWizard();
+
+                    wizard.showBindingPage = true;
+                    wizard.bindingTarget = this.target;
+
+                    return wizard;
+                },
+                {
+                    deps: [this.target],
+                },
+            )}
+        >
+            ${msg("Create and bind Policy")}
+        </button>`;
+    }
+
     row(item: PolicyBinding): SlottedTemplateResult[] {
         return [
             html`<pre>${item.order}</pre>`,
@@ -215,11 +239,7 @@ export class BoundPoliciesList<T extends PolicyBinding = PolicyBinding> extends 
                 <div slot="body">${msg("No policies are currently bound to this object.")}</div>
                 <fieldset class="pf-c-form__group pf-m-action" slot="primary">
                     <legend class="sr-only">${msg("Policy actions")}</legend>
-                    <ak-policy-wizard
-                        createText=${msg("Create and bind Policy")}
-                        showBindingPage
-                        bindingTarget=${ifDefined(this.target)}
-                    ></ak-policy-wizard>
+                    ${this.renderNewPolicyButton()}
                     <ak-forms-modal size=${PFSize.Medium}>
                         ${StrictUnsafe<PolicyBindingForm>(this.bindingEditForm, {
                             slot: "form",
@@ -241,12 +261,8 @@ export class BoundPoliciesList<T extends PolicyBinding = PolicyBinding> extends 
 
     renderToolbar(): TemplateResult {
         return html`${this.allowedTypes.includes(PolicyBindingCheckTarget.Policy)
-                ? html`<ak-policy-wizard
-                      createText=${msg("Create and bind Policy")}
-                      showBindingPage
-                      bindingTarget=${ifDefined(this.target)}
-                  ></ak-policy-wizard>`
-                : nothing}
+                ? this.renderNewPolicyButton()
+                : null}
             <ak-forms-modal size=${PFSize.Medium}>
                 ${StrictUnsafe<PolicyBindingForm>(this.bindingEditForm, {
                     slot: "form",

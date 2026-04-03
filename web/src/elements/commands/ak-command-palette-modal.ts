@@ -445,9 +445,7 @@ export class AKCommandPaletteModal extends AKModal {
 
     //#region Event Listeners
 
-    @listen(AKCommandChangeEvent, {
-        target: this,
-    })
+    @listen(AKCommandChangeEvent)
     protected commandChangeListener = (event: AKCommandChangeEvent) => {
         this.setCommands(event.commands, event.previousCommands);
     };

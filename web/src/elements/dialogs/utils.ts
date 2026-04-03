@@ -5,6 +5,7 @@
 import "#elements/dialogs/ak-modal";
 
 import { checkShallowEquality } from "#common/collections";
+import { AKRefreshEvent } from "#common/events";
 
 import { AKModal } from "#elements/dialogs/ak-modal";
 import { SlottedTemplateResult } from "#elements/types";
@@ -50,6 +51,19 @@ export function resolveDialogContainer(
     return ownerDocument.body;
 }
 
+function setDialogCountAttribute(delta: number, ownerDocument: Document = document): void {
+    const { dataset } = ownerDocument.documentElement;
+
+    const currentCount = parseInt(dataset.dialogCount || "0", 10);
+    const nextCount = Math.max(0, currentCount + delta);
+
+    if (nextCount === 0) {
+        delete dataset.dialogCount;
+    } else {
+        dataset.dialogCount = nextCount.toString();
+    }
+}
+
 /**
  * Initialization options for dialog and modal rendering functions.
  */
@@ -59,6 +73,7 @@ export interface DialogInit {
     closedBy?: ClosedBy;
     classList?: string[];
     signal?: AbortSignal;
+    onDispose?: (event?: Event) => void;
 }
 
 /**
@@ -91,11 +106,18 @@ export function renderDialog(
         parentElement = ownerDocument.getElementById("interface-root"),
         closedBy = "any",
         classList = [],
+        onDispose,
     }: DialogInit = {},
 ): Promise<void> {
     const dialog = ownerDocument.createElement("dialog");
     dialog.classList.add("ak-c-dialog", ...classList);
     dialog.closedBy = closedBy;
+    dialog.part = "dialog";
+
+    const messageContainer = ownerDocument.createElement("ak-message-container");
+    messageContainer.alignment = "bottom-left";
+
+    dialog.appendChild(messageContainer);
 
     const resolvers = Promise.withResolvers<void>();
 
@@ -104,10 +126,14 @@ export function renderDialog(
 
     shadowRoot.appendChild(dialog);
 
-    const dispose = () => {
+    const dispose = (event?: Event) => {
         dialog.close();
         dialog.remove();
         resolvers.resolve();
+
+        setDialogCountAttribute(-1, ownerDocument);
+
+        onDispose?.(event);
     };
 
     dialog.addEventListener("close", dispose, {
@@ -121,6 +147,8 @@ export function renderDialog(
     });
 
     render(renderable, dialog);
+
+    setDialogCountAttribute(1, ownerDocument);
 
     return resolvers.promise;
 }
@@ -249,7 +277,10 @@ class ModalInvokerDirective extends Directive {
             this.#cleanup = null;
         }
 
-        const listener = asInvoker(factory, options);
+        const onDispose =
+            options?.onDispose ?? (() => part.element.dispatchEvent(new AKRefreshEvent()));
+
+        const listener = asInvoker(factory, { ...options, onDispose });
         part.element.addEventListener("click", listener);
 
         const cleanup = () => {

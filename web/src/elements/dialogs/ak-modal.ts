@@ -38,11 +38,6 @@ export class AKModal extends AKElement {
     };
 
     /**
-     * An optional aria-label for the modal dialog, used for accessibility purposes.
-     */
-    public static formatARIALabel?(): string;
-
-    /**
      * Whether the modal should open the parent dialog element when it is connected to the DOM.
      */
     public static openOnConnect = true;
@@ -128,12 +123,24 @@ export class AKModal extends AKElement {
     @property({ type: String })
     public cancelButtonLabel: string | null = null;
 
+    /**
+     * An optional aria-label formatter.
+     */
+    public formatARIALabel?(): string;
+
+    //#endregion
+
+    //#region Protected Properties
+
     protected defaultSlot: HTMLSlotElement;
     protected beforeBodySlot: HTMLSlotElement;
     protected dialogBody: HTMLDivElement;
 
     @state()
     protected slottedElement: TransclusionElement | null = null;
+
+    @state()
+    protected slottedElementUpdatedAt: Date | null = null;
 
     //#endregion
 
@@ -475,7 +482,7 @@ export class AKModal extends AKElement {
 
         if (!dialogElement) return;
 
-        const ariaLabel = (this.constructor as typeof AKModal).formatARIALabel?.();
+        const ariaLabel = this.formatARIALabel?.();
 
         const modalTitleElement = this.modalTitleRef.value;
 
@@ -535,24 +542,27 @@ export class AKModal extends AKElement {
      * @abstract
      */
     protected renderHeader(): SlottedTemplateResult {
-        const { headline, slottedElement } = this;
+        const { headline, slottedElement, slottedElementUpdatedAt } = this;
         const hasHeaderSlot = this.findSlotted("header");
 
-        return guard([headline, hasHeaderSlot, slottedElement], () => {
+        return guard([headline, hasHeaderSlot, slottedElement, slottedElementUpdatedAt], () => {
             if (!headline && !hasHeaderSlot && !slottedElement) {
                 return null;
             }
 
-            const content = slottedElement ? slottedElement.renderHeader?.(true) : null;
+            const slottedHeader = slottedElement ? slottedElement.renderHeader?.(true) : null;
 
-            return html`<div class="ak-c-dialog__header" part="header">
-                <div class="ak-c-dialog__title">
-                    <h1 class="ak-c-dialog__title-text" id="modal-title" ${ref(this.modalTitleRef)}>
+            const content =
+                slottedHeader ??
+                html`<div class="ak-c-dialog__title">
+                    <h1 class="ak-c-dialog__title-text" id="modal-title">
                         ${this.headline}
                         <slot name="header"></slot>
-                        ${content}
                     </h1>
-                </div>
+                </div>`;
+
+            return html`<div class="ak-c-dialog__header" part="header" ${ref(this.modalTitleRef)}>
+                ${content}
             </div>`;
         });
     }
@@ -566,12 +576,25 @@ export class AKModal extends AKElement {
      * @abstract
      */
     protected renderActions(): SlottedTemplateResult {
-        const { slottedElement } = this;
+        const { slottedElement, slottedElementUpdatedAt } = this;
         const hasActionsSlot = this.findSlotted("actions");
-        return guard([hasActionsSlot, slottedElement], () => {
+
+        return guard([hasActionsSlot, slottedElement, slottedElementUpdatedAt], () => {
             if (!hasActionsSlot && !slottedElement) {
                 return null;
             }
+
+            const cancelButton = slottedElement?.cancelable
+                ? html`<button
+                      @click=${this.closeListener}
+                      class="pf-c-button pf-m-plain"
+                      type="button"
+                  >
+                      ${this.cancelButtonLabel ??
+                      slottedElement?.cancelButtonLabel ??
+                      msg("Cancel")}
+                  </button>`
+                : null;
 
             return html`<footer
                 aria-label=${msg("Form actions")}
@@ -579,10 +602,7 @@ export class AKModal extends AKElement {
                 part="actions"
             >
                 <slot name="actions"></slot>
-                <button @click=${this.closeListener} class="pf-c-button pf-m-plain" type="button">
-                    ${this.cancelButtonLabel ?? slottedElement?.cancelButtonLabel ?? msg("Cancel")}
-                </button>
-                ${slottedElement ? slottedElement.renderActions?.(true) : null}
+                ${cancelButton} ${slottedElement ? slottedElement.renderActions?.(true) : null}
             </footer>`;
         });
     }

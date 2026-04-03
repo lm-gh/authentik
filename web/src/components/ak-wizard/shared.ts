@@ -1,15 +1,14 @@
 import { SlottedTemplateResult } from "#elements/types";
 
-import { msg } from "@lit/localize";
+import { msg, str } from "@lit/localize";
 import { html } from "lit-html";
 
-export type EnabledWizardButton =
+export type WizardButton =
     | { kind: "back"; label?: string; destination: string }
     | { kind: "cancel"; label?: string }
     | { kind: "close"; label?: string }
-    | { kind: "next"; label?: string; destination: string };
-
-export type WizardButton = EnabledWizardButton;
+    | { kind: "next"; label?: string; destination: string }
+    | { kind: "create"; label?: string; destination: string };
 
 export type NavigableButton = Extract<WizardButton, { destination: string }>;
 
@@ -22,7 +21,7 @@ export interface WizardStepLabel {
 }
 
 export type WizardStepState = {
-    currentStep?: string;
+    currentStep: string | null;
     stepLabels: WizardStepLabel[];
 };
 
@@ -31,6 +30,7 @@ export const isNavigable = (b: WizardButton): b is NavigableButton =>
 
 export const ButtonKindClassnameRecord = {
     next: "pf-m-primary",
+    create: "pf-m-primary",
     back: "pf-m-secondary",
     close: "pf-m-link",
     cancel: "pf-m-plain",
@@ -43,12 +43,27 @@ export const ButtonKindLabelRecord = {
                 <i class="fas fa-arrow-right" aria-hidden="true"></i>
             </span>`;
     },
+    create: (entitySingular?: string) => {
+        const label = entitySingular
+            ? msg(str`Create ${entitySingular}`, {
+                  id: "form.create-submit",
+              })
+            : msg("Create", {
+                  id: "form.create-submit-no-entity",
+              });
+
+        return html`${label}
+            <span class="pf-c-button__icon pf-m-end">
+                <i class="fas fa-check" aria-hidden="true"></i>
+            </span>`;
+    },
     back: () => {
         return html`<span class="pf-c-button__icon pf-m-start">
                 <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </span>
             ${msg("Back")}`;
     },
+
     cancel: () => msg("Cancel"),
     close: () => msg("Close"),
-} as const satisfies Record<ButtonKind, () => SlottedTemplateResult>;
+} as const satisfies Record<ButtonKind, (entitySingular?: string) => SlottedTemplateResult>;

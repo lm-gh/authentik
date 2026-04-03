@@ -1,6 +1,6 @@
 import "#admin/outposts/ServiceConnectionDockerForm";
 import "#admin/outposts/ServiceConnectionKubernetesForm";
-import "#admin/outposts/ServiceConnectionWizard";
+import "#admin/outposts/ak-service-connection-wizard";
 import "#admin/rbac/ObjectPermissionModal";
 import "#components/ak-status-label";
 import "#elements/buttons/SpinnerButton/index";
@@ -18,6 +18,8 @@ import { PaginatedResponse, TableColumn } from "#elements/table/Table";
 import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
+
+import { AKServiceConnectionWizard } from "#admin/outposts/ak-service-connection-wizard";
 
 import { OutpostsApi, ServiceConnection, ServiceConnectionState } from "@goauthentik/api";
 
@@ -161,8 +163,15 @@ export class OutpostServiceConnectionListPage extends TablePage<ServiceConnectio
         </ak-forms-delete-bulk>`;
     }
 
-    renderObjectCreate(): TemplateResult {
-        return html`<ak-service-connection-wizard></ak-service-connection-wizard> `;
+    protected override renderObjectCreate(): SlottedTemplateResult {
+        return html`<button
+            class="pf-c-button pf-m-primary"
+            type="button"
+            aria-description="${msg("Open the wizard to create a new service connection.")}"
+            ${AKServiceConnectionWizard.asModalInvoker()}
+        >
+            ${msg("New Outpost Integration")}
+        </button>`;
     }
 }
 

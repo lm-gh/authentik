@@ -7,22 +7,26 @@
 
     --ak-c-dialog--ZIndex: var(--pf-global--ZIndex--xl);
 
-    --ak-c-dialog--Width: 100%;
-    --ak-c-dialog--MaxWidth: calc(100% - var(--pf-global--spacer--xl));
+    --ak-c-dialog--WidthBasis: 100%;
+    --ak-c-dialog--HeightBasis: 75dvh;
+
+    --ak-c-dialog--MarginBlock: var(--pf-global--spacer--xl);
+    --ak-c-dialog--MarginInline: var(--pf-global--spacer--4xl);
+
+    --ak-c-dialog--MaxWidth: calc(100dvw - var(--ak-c-dialog--MarginInline));
 
     --ak-c-dialog--Ratio: calc(3 / 4);
-    --ak-c-dialog--AspectRatioHeight: calc(var(--ak-c-dialog--Width) * var(--ak-c-dialog--Ratio));
-    --ak-c-dialog--MaxHeight: 75dvh;
+    --ak-c-dialog--AspectRatioHeight: calc(
+        var(--ak-c-dialog--WidthBasis) * var(--ak-c-dialog--Ratio)
+    );
+    --ak-c-dialog--MaxHeight: calc(
+        min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--HeightBasis)) -
+            var(--ak-c-dialog--MarginBlock)
+    );
 
-    --ak-c-dialog--MarginBlockStart: auto;
     --ak-c-dialog--BorderColor: var(--pf-global--BackgroundColor--150);
 
     --ak-c-dialog--BorderWidth: 0;
-
-    --ak-c-dialog__backdrop--BackgroundColor: transparent;
-    --ak-c-dialog__backdrop--BackdropFilter: blur(0);
-    --ak-c-dialog__backdrop--active--BackgroundColor: hsla(0, 0%, 0%, 0.5);
-    --ak-c-dialog__backdrop--active--BackdropFilter: blur(2px);
 
     --ak-c-dialog--TransitionDuration--Transform: 250ms;
     --ak-c-dialog--TransitionDuration--Opacity: 100ms;
@@ -30,6 +34,45 @@
     --ak-c-dialog--TransitionDuration--Overlay: 50ms;
     --ak-c-dialog--TransitionDuration--Display: 50ms;
     --ak-c-dialog--TransitionDuration--Height: 25ms;
+}
+
+/* #endregion */
+
+/* #region Dialog */
+
+.ak-c-dialog {
+    box-sizing: content-box;
+    scrollbar-gutter: stable;
+    overscroll-behavior: none;
+    color: var(--pf-global--Color--100, CanvasText);
+    background-color: var(--ak-c-dialog--BackgroundColor);
+    box-shadow: var(--ak-c-dialog--BoxShadow);
+    padding: var(--ak-c-dialog--Padding);
+
+    z-index: var(--ak-c-dialog--ZIndex);
+    width: min(var(--ak-c-dialog--WidthBasis), var(--ak-c-dialog--MaxWidth));
+    max-width: var(--ak-c-dialog--MaxWidth);
+    max-height: var(--ak-c-dialog--MaxHeight);
+
+    background-color: var(--ak-c-dialog--BackgroundColor);
+    box-shadow: var(--ak-c-dialog--BoxShadow);
+
+    border-width: var(--ak-c-dialog--BorderWidth);
+    border-color: var(--ak-c-dialog--BorderColor);
+
+    &:focus-visible {
+        outline: none;
+    }
+
+    @media (width <= 768px) {
+        --ak-c-dialog--MaxHeight: 100dvh;
+        --ak-c-dialog--AspectRatioHeight: none;
+        /* Note that a unit is required for to perform the calculation. */
+        --ak-c-dialog--MarginBlock: 0em;
+        --ak-c-dialog--MarginInline: 0em;
+
+        height: 100dvh;
+    }
 }
 
 /* #endregion */
@@ -73,7 +116,6 @@
     --ak-c-dialog__body--MinHeight: calc(
         var(--pf-global--FontSize--md) * var(--pf-global--LineHeight--md)
     );
-    --ak-c-dialog__body--MaxHeight: calc(75dvh - var(--pf-global--spacer--2xl));
 
     --ak-c-dialog__body--PaddingTop: var(--pf-global--spacer--lg);
     --ak-c-dialog__body--PaddingRight: var(--pf-global--spacer--lg);
@@ -90,34 +132,31 @@
     --ak-c-dialog__footer--PaddingRight: var(--pf-global--spacer--lg);
     --ak-c-dialog__footer--PaddingBottom: var(--pf-global--spacer--lg);
     --ak-c-dialog__footer--PaddingLeft: var(--pf-global--spacer--lg);
+    --ak-c-dialog__footer--BoxShadow: inset 0 1px 0
+        var(--pf-global--BackgroundColor--dark-transparent-200);
 }
 
 /* #endregion */
 
-/* #region Dialog */
+/* #region Backdrop */
 
 .ak-c-dialog {
-    box-sizing: content-box;
-    scrollbar-gutter: stable;
-    overscroll-behavior: none;
-    background-color: var(--ak-c-dialog--BackgroundColor);
-    box-shadow: var(--ak-c-dialog--BoxShadow);
-    padding: var(--ak-c-dialog--Padding);
+    --ak-c-dialog__backdrop--BackgroundColor: transparent;
+    --ak-c-dialog__backdrop--BackdropFilter: blur(0);
+    --ak-c-dialog__backdrop--active--BackgroundColor: hsla(0, 0%, 0%, 0.5);
+    --ak-c-dialog__backdrop--active--BackdropFilter: blur(2px);
 
-    z-index: var(--ak-c-dialog--ZIndex);
-    width: var(--ak-c-dialog--Width);
-    max-width: var(--ak-c-dialog--MaxWidth);
+    &::backdrop {
+        backdrop-filter: var(--ak-c-dialog__backdrop--BackdropFilter);
+        background-color: var(--ak-c-dialog__backdrop--BackgroundColor);
 
-    max-height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
+        transition:
+            backdrop-filter,
+            overlay allow-discrete,
+            background-color;
 
-    background-color: var(--ak-c-dialog--BackgroundColor);
-    box-shadow: var(--ak-c-dialog--BoxShadow);
-
-    border-width: var(--ak-c-dialog--BorderWidth);
-    border-color: var(--ak-c-dialog--BorderColor);
-
-    &:focus-visible {
-        outline: none;
+        transition-timing-function: ease-in-out;
+        transition-duration: var(--ak-c-dialog--TransitionDuration--Backdrop);
     }
 }
 
@@ -126,8 +165,6 @@
 /* #region Transitions */
 
 .ak-c-dialog {
-    margin-block-start: var(--ak-c-dialog--MarginBlockStart);
-
     interpolate-size: allow-keywords;
     transition:
         opacity var(--ak-c-dialog--TransitionDuration--Opacity),
@@ -139,19 +176,6 @@
 
     opacity: 0;
     transform: translateY(1em);
-}
-
-.ak-c-dialog::backdrop {
-    backdrop-filter: var(--ak-c-dialog__backdrop--BackdropFilter);
-    background-color: var(--ak-c-dialog__backdrop--BackgroundColor);
-
-    transition:
-        backdrop-filter,
-        overlay allow-discrete,
-        background-color;
-
-    transition-timing-function: ease-in-out;
-    transition-duration: var(--ak-c-dialog--TransitionDuration--Backdrop);
 }
 
 .ak-c-dialog.fade-in {
@@ -178,45 +202,24 @@
     --ak-c-dialog--m-md--Width: 52.5rem;
     --ak-c-dialog--m-lg--lg--MaxWidth: 70rem;
 
-    --ak-c-dialog--m-align-top--spacer: var(--pf-global--spacer--sm);
-    --ak-c-dialog--m-align-top--xl--spacer: var(--pf-global--spacer--xl);
-    --ak-c-dialog--m-align-top--MarginTop: var(--ak-c-dialog--m-align-top--spacer);
-    --ak-c-dialog--m-align-top--MaxHeight: calc(
-        100% - min(var(--ak-c-dialog--m-align-top--spacer), var(--pf-global--spacer--2xl)) -
-            var(--ak-c-dialog--m-align-top--spacer)
-    );
-    --ak-c-dialog--m-align-top--MaxWidth: calc(
-        100% - min(var(--ak-c-dialog--m-align-top--spacer) * 2, var(--pf-global--spacer--xl))
-    );
     --ak-c-dialog--m-danger__title-icon--Color: var(--pf-global--danger-color--100);
     --ak-c-dialog--m-warning__title-icon--Color: var(--pf-global--warning-color--100);
     --ak-c-dialog--m-success__title-icon--Color: var(--pf-global--success-color--100);
     --ak-c-dialog--m-info__title-icon--Color: var(--pf-global--info-color--100);
     --ak-c-dialog--m-default__title-icon--Color: var(--pf-global--default-color--200);
-
-    @media (min-width: 1200px) {
-        --ak-c-dialog--m-align-top--spacer: var(--ak-c-dialog--m-align-top--xl--spacer);
-    }
 }
 
 .ak-c-dialog {
     &.pf-m-sm {
-        --ak-c-dialog--Width: var(--ak-c-dialog--m-sm--sm--MaxWidth);
+        --ak-c-dialog--WidthBasis: var(--ak-c-dialog--m-sm--sm--MaxWidth);
     }
 
     &.pf-m-md {
-        --ak-c-dialog--Width: var(--ak-c-dialog--m-md--Width);
+        --ak-c-dialog--WidthBasis: var(--ak-c-dialog--m-md--Width);
     }
 
     &.pf-m-lg {
-        --ak-c-dialog--Width: var(--ak-c-dialog--m-lg--lg--MaxWidth);
-    }
-
-    &.pf-m-align-top {
-        top: var(--ak-c-dialog--m-align-top--MarginTop);
-        align-self: flex-start;
-        max-width: var(--ak-c-dialog--m-align-top--MaxWidth);
-        max-height: var(--ak-c-dialog--m-align-top--MaxHeight);
+        --ak-c-dialog--WidthBasis: var(--ak-c-dialog--m-lg--lg--MaxWidth);
     }
 
     &.pf-m-danger {
@@ -248,6 +251,7 @@
     display: grid;
     grid-template-rows: [header] auto [body] 1fr [footer] auto;
     max-height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
+    height: stretch;
 }
 
 .ak-c-dialog__content ::part(toolbar) {
@@ -258,6 +262,45 @@
 
 .ak-c-dialog__content [slot="before-body"] {
     margin-block-end: 1rem;
+}
+
+.ak-c-dialog__content:has(.ak-c-wizard) {
+    grid-template-rows: [body] auto;
+    --ak-c-dialog__body--PaddingRight: 0;
+    --ak-c-dialog__body--PaddingLeft: 0;
+    --ak-c-dialog__body--last-child--PaddingBottom: 0;
+    --ak-c-dialog__body--PaddingTop: 0;
+
+    ::part(body) {
+        overscroll-behavior: none;
+    }
+
+    ::part(header),
+    ::part(actions) {
+        display: none;
+    }
+}
+
+.ak-c-wizard {
+    /* display: contents; */
+
+    max-height: var(--ak-c-dialog--MaxHeight);
+    display: block;
+    height: 100%;
+
+    [part="main"] {
+        /* display: flex;
+        flex-flow: column;
+        max-height: 100%;
+
+        height: stretch; */
+        /* display: contents; */
+        display: block;
+    }
+
+    [part="page-form"] {
+        flex: 1 1 auto;
+    }
 }
 
 /* #endregion */

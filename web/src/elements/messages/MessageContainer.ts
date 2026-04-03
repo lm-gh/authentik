@@ -6,6 +6,7 @@ import { APIMessage, MessageLevel } from "#common/messages";
 import { AKElement } from "#elements/Base";
 import Styles from "#elements/messages/styles.css";
 import { ifPresent } from "#elements/utils/attributes";
+import { findTopmost } from "#elements/utils/render-roots";
 
 import { ConsoleLogger } from "#logger/browser";
 
@@ -39,7 +40,9 @@ export function showMessage(message: APIMessage | null, unique = false): void {
         message.description ??= msg("Please check the browser console for more details.");
     }
 
-    const container = document.querySelector<MessageContainer>("ak-message-container");
+    const topmost = findTopmost();
+
+    const container = topmost.querySelector<MessageContainer>("ak-message-container");
 
     if (!container) {
         logger.warn("authentik/messages: No message container found in DOM");
@@ -87,13 +90,15 @@ export function showAPIErrorMessage(error: APIError, unique = false): void {
     );
 }
 
+export type MessageContainerAlignment = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
 @customElement("ak-message-container")
 export class MessageContainer extends AKElement {
     @property({ attribute: false })
     public messages: APIMessage[] = [];
 
-    @property()
-    alignment: "top" | "bottom" = "top";
+    @property({ type: String, reflect: true, useDefault: true })
+    public alignment: MessageContainerAlignment = "bottom-right";
 
     static styles: CSSResult[] = [PFAlertGroup, Styles];
 
@@ -120,7 +125,9 @@ export class MessageContainer extends AKElement {
         if (changedProperties.has("messages") && this.messages.length) {
             // Invoking the popover is only needed for browsers that support dialogs
             // that support HTMLDialogElement.showModal()
-            this.showPopover?.();
+            const source = findTopmost(this.ownerDocument);
+
+            this.showPopover?.({ source });
         }
     }
 
@@ -146,8 +153,10 @@ export class MessageContainer extends AKElement {
     render() {
         return html`<ul
             role="region"
+            part="messages"
             aria-label="${msg("Status messages")}"
             class="pf-c-alert-group pf-m-toast"
+            data-alignment=${this.alignment}
         >
             ${this.messages.toReversed().map((message, idx) => {
                 const { message: title, description, level, icon } = message;

@@ -16,7 +16,7 @@ import { type NavigableButton, type WizardButton } from "#components/ak-wizard/s
 
 import { ApplicationWizardStep } from "#admin/applications/wizard/ApplicationWizardStep";
 import {
-    ApplicationWizardStateUpdate,
+    ApplicationWizardContextUpdate,
     WizardValidationRecord,
 } from "#admin/applications/wizard/steps/providers/shared";
 import { policyEngineModes } from "#admin/policies/PolicyEngineModes";
@@ -104,7 +104,7 @@ export class ApplicationWizardApplicationStep extends ApplicationWizardStep {
 
         const app = { ...this.formValues };
 
-        const payload: ApplicationWizardStateUpdate = {
+        const payload: ApplicationWizardContextUpdate = {
             app,
             errors: omitKeys(this.wizard.errors, "app"),
         };

@@ -57,6 +57,12 @@ export class AKElement extends LitElement implements AKElementProps {
     /**
      * A cache of the element's host styles, converted to {@linkcode CSSStyleSheet}
      * instances to avoid duplicated references.
+     *
+     * **You should not need to interact with this property directly.**
+     *
+     * @see {@linkcode hostStyles} for the public API for this property.
+     *
+     * @protected
      */
     protected static hostStyleSheets: CSSStyleSheet[] | null = null;
 

@@ -13,7 +13,7 @@ import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 
-import { EndpointConnectorWizard } from "#admin/endpoints/connectors/ConnectorWizard";
+import { AKEndpointConnectorWizard } from "#admin/endpoints/connectors/ConnectorWizard";
 
 import { Connector, EndpointsApi } from "@goauthentik/api";
 
@@ -69,19 +69,17 @@ export class ConnectorsListPage extends TablePage<Connector> {
     }
 
     protected override renderObjectCreate(): SlottedTemplateResult {
-        return html`
-            <button
-                class="pf-c-button pf-m-primary"
-                type="button"
-                aria-description="${msg("Open the wizard to create a new connector.")}"
-                ${EndpointConnectorWizard.asModalInvoker()}
-            >
-                ${msg("New Connector")}
-            </button>
-        `;
+        return html`<button
+            class="pf-c-button pf-m-primary"
+            type="button"
+            aria-description="${msg("Open the wizard to create a new connector.")}"
+            ${AKEndpointConnectorWizard.asModalInvoker()}
+        >
+            ${msg("New Connector")}
+        </button>`;
     }
 
-    renderToolbarSelected() {
+    protected override renderToolbarSelected() {
         const disabled = this.selectedElements.length < 1;
         return html`<ak-forms-delete-bulk
             object-label=${msg("Connector(s)")}

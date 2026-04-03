@@ -1,5 +1,5 @@
 import "#admin/applications/ApplicationWizardHint";
-import "#admin/providers/ProviderWizard";
+import "#admin/providers/ak-provider-wizard";
 import "#admin/providers/google_workspace/GoogleWorkspaceProviderForm";
 import "#admin/providers/ldap/LDAPProviderForm";
 import "#admin/providers/microsoft_entra/MicrosoftEntraProviderForm";
@@ -22,7 +22,7 @@ import { PaginatedResponse, TableColumn } from "#elements/table/Table";
 import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 
-import { AKProviderWizard } from "#admin/providers/ProviderWizard";
+import { AKProviderWizard } from "#admin/providers/ak-provider-wizard";
 
 import { Provider, ProvidersApi } from "@goauthentik/api";
 

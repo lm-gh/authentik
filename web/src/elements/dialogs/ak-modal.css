@@ -79,7 +79,6 @@
 /* #region Body */
 
 .ak-c-dialog__body {
-    max-height: var(--ak-c-dialog__body--MaxHeight);
     min-height: var(--ak-c-dialog__body--MinHeight);
     padding-top: var(--ak-c-dialog__body--PaddingTop);
     padding-right: var(--ak-c-dialog__body--PaddingRight);
@@ -100,11 +99,13 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: end;
+
     padding-top: var(--ak-c-dialog__footer--PaddingTop);
     padding-right: var(--ak-c-dialog__footer--PaddingRight);
     padding-bottom: var(--ak-c-dialog__footer--PaddingBottom);
     padding-left: var(--ak-c-dialog__footer--PaddingLeft);
 
+    box-shadow: var(--ak-c-dialog__footer--BoxShadow);
     gap: var(--pf-global--spacer--xs);
 
     @media screen and (min-width: 576px) {

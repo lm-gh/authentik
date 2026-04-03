@@ -9,7 +9,7 @@ import { DEFAULT_CONFIG } from "#common/api/config";
 import { AKElement } from "#elements/Base";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 import { FormWizardPage } from "#elements/wizard/FormWizardPage";
-import { Wizard } from "#elements/wizard/Wizard";
+import { AKWizard } from "#elements/wizard/Wizard";
 
 import { StageBindingForm } from "#admin/flows/StageBindingForm";
 
@@ -39,7 +39,7 @@ export class StageWizard extends AKElement {
     stageTypes: TypeCreate[] = [];
 
     @query("ak-wizard")
-    wizard?: Wizard;
+    wizard?: AKWizard;
 
     firstUpdated(): void {
         new StagesApi(DEFAULT_CONFIG).stagesAllTypesList().then((types) => {
@@ -54,25 +54,7 @@ export class StageWizard extends AKElement {
                 header=${msg("New stage")}
                 description=${msg("Create a new stage.")}
             >
-                <ak-wizard-page-type-create
-                    slot="initial"
-                    .types=${this.stageTypes}
-                    @select=${(ev: CustomEvent<TypeCreate>) => {
-                        if (!this.wizard) return;
-                        const idx = this.wizard.steps.indexOf("initial") + 1;
-                        // Exclude all current steps starting with type-,
-                        // this happens when the user selects a type and then goes back
-                        this.wizard.steps = this.wizard.steps.filter(
-                            (step) => !step.startsWith("type-"),
-                        );
-                        this.wizard.steps.splice(
-                            idx,
-                            0,
-                            `type-${ev.detail.component}-${ev.detail.modelName}`,
-                        );
-                        this.wizard.isValid = true;
-                    }}
-                >
+                <ak-wizard-page-type-create slot="initial" .types=${this.stageTypes}>
                 </ak-wizard-page-type-create>
                 ${this.stageTypes.map((type) => {
                     return html`

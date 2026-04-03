@@ -1,4 +1,4 @@
-import "#admin/sources/SourceWizard";
+import "#admin/sources/ak-source-wizard";
 import "#admin/sources/kerberos/KerberosSourceForm";
 import "#admin/sources/ldap/LDAPSourceForm";
 import "#admin/sources/oauth/OAuthSourceForm";
@@ -17,7 +17,7 @@ import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
 
-import { SourceWizard } from "#admin/sources/SourceWizard";
+import { AKSourceWizard } from "#admin/sources/ak-source-wizard";
 
 import { Source, SourcesApi } from "@goauthentik/api";
 
@@ -127,7 +127,7 @@ export class SourceListPage extends TablePage<Source> {
                 class="pf-c-button pf-m-primary"
                 type="button"
                 aria-description="${msg("Open the wizard to create a new source.")}"
-                ${SourceWizard.asModalInvoker()}
+                ${AKSourceWizard.asModalInvoker()}
             >
                 ${msg("New Source")}
             </button>

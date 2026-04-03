@@ -106,19 +106,26 @@ export class DevRepeatedRequestsMiddleware implements Middleware, Disposable {
     #requests: string[] = [];
     #counts = new Map<string, number>();
     #warnings = new Set<string>();
-    #logger = ConsoleLogger.prefix("repeated-requests-middleware");
 
-    clear = () => {
-        this.#logger.debug("Clearing count");
+    public clear = () => {
         this.#requests = [];
         this.#counts.clear();
         this.#warnings.clear();
     };
 
+    #timeoutId = -1;
+
+    public clearAfterIdle = () => {
+        clearTimeout(this.#timeoutId);
+        this.#timeoutId = window.setTimeout(this.clear, 1000);
+    };
+
     constructor(protected readonly maxRequests: number = 10) {
-        window.addEventListener("hashchange", this.clear);
-        window.addEventListener(AKRefreshEvent.eventName, this.clear);
-        window.addEventListener(AKEnterpriseRefreshEvent.eventName, this.clear);
+        window.addEventListener("hashchange", this.clear, { passive: true });
+        window.addEventListener(AKRefreshEvent.eventName, this.clear, { passive: true });
+        window.addEventListener(AKEnterpriseRefreshEvent.eventName, this.clear, { passive: true });
+
+        window.addEventListener("click", this.clearAfterIdle, { passive: true });
     }
 
     public [Symbol.dispose]() {

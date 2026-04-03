@@ -18,6 +18,18 @@ export function resolveInterface<T extends HTMLElement = LitElement>(ownerDocume
 }
 
 /**
+ * Finds the topmost element visible to the user, typically a dialog or the body.
+ *
+ * @param ownerDocument The document to query. Defaults to the global document.
+ */
+export function findTopmost(ownerDocument = document): HTMLElement {
+    const interfaceElement = resolveInterface(ownerDocument);
+
+    const dialogs = interfaceElement.renderRoot.querySelectorAll<HTMLDialogElement>("dialog:open");
+    return dialogs.length ? dialogs[dialogs.length - 1] : ownerDocument.body;
+}
+
+/**
  * Given a node, finds the nearest parent element, traversing through shadow DOM and document fragments if necessary.
  *
  * @param node The node to find the nearest parent element for.
@@ -68,4 +80,17 @@ export function findClosestHostMatch<T extends Element = Element | HTMLElement>(
     }
 
     return null;
+}
+
+/**
+ * Given a node, finds the nearest parent dialog element.
+ *
+ * @see {@linkcode findClosestHostMatch} for the underlying implementation.
+ *
+ * @param node The node to find the nearest parent dialog for.
+ */
+export function findNearestDialog(node: Node): HTMLDialogElement | null {
+    return findClosestHostMatch(node, (element): element is HTMLDialogElement => {
+        return element instanceof HTMLDialogElement;
+    });
 }

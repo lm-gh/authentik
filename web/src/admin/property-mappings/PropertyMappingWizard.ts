@@ -22,7 +22,7 @@ import { DEFAULT_CONFIG } from "#common/api/config";
 
 import { AKElement } from "#elements/Base";
 import { StrictUnsafe } from "#elements/utils/unsafe";
-import type { Wizard } from "#elements/wizard/Wizard";
+import type { AKWizard } from "#elements/wizard/Wizard";
 
 import { PropertymappingsApi, TypeCreate } from "@goauthentik/api";
 
@@ -41,7 +41,7 @@ export class PropertyMappingWizard extends AKElement {
     mappingTypes: TypeCreate[] = [];
 
     @query("ak-wizard")
-    wizard?: Wizard;
+    wizard?: AKWizard;
 
     async firstUpdated(): Promise<void> {
         this.mappingTypes = await new PropertymappingsApi(
@@ -50,38 +50,34 @@ export class PropertyMappingWizard extends AKElement {
     }
 
     render(): TemplateResult {
-        return html`
-            <ak-wizard
-                .steps=${["initial"]}
-                header=${msg("New property mapping")}
-                description=${msg("Create a new property mapping.")}
+        return html`<ak-wizard
+            .steps=${["initial"]}
+            header=${msg("New property mapping")}
+            description=${msg("Create a new property mapping.")}
+        >
+            <ak-wizard-page-type-create
+                slot="initial"
+                .types=${this.mappingTypes}
+                @select=${(ev: CustomEvent<TypeCreate>) => {
+                    if (!this.wizard) return;
+                    this.wizard.steps = [
+                        "initial",
+                        `type-${ev.detail.component}-${ev.detail.modelName}`,
+                    ];
+                    this.wizard.isValid = true;
+                }}
             >
-                <ak-wizard-page-type-create
-                    slot="initial"
-                    .types=${this.mappingTypes}
-                    @select=${(ev: CustomEvent<TypeCreate>) => {
-                        if (!this.wizard) return;
-                        this.wizard.steps = [
-                            "initial",
-                            `type-${ev.detail.component}-${ev.detail.modelName}`,
-                        ];
-                        this.wizard.isValid = true;
-                    }}
+            </ak-wizard-page-type-create>
+            ${this.mappingTypes.map((type) => {
+                return html`<ak-wizard-page-form
+                    slot=${`type-${type.component}-${type.modelName}`}
+                    label=${msg(str`Create ${type.name}`)}
                 >
-                </ak-wizard-page-type-create>
-                ${this.mappingTypes.map((type) => {
-                    return html`
-                        <ak-wizard-page-form
-                            slot=${`type-${type.component}-${type.modelName}`}
-                            label=${msg(str`Create ${type.name}`)}
-                        >
-                            ${StrictUnsafe(type.component)}
-                        </ak-wizard-page-form>
-                    `;
-                })}
-                <button slot="trigger" class="pf-c-button pf-m-primary">${msg("Create")}</button>
-            </ak-wizard>
-        `;
+                    ${StrictUnsafe(type.component)}
+                </ak-wizard-page-form>`;
+            })}
+            <button slot="trigger" class="pf-c-button pf-m-primary">${msg("Create")}</button>
+        </ak-wizard> `;
     }
 }
 

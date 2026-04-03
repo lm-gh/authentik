@@ -3,22 +3,27 @@ import { WizardPage } from "#elements/wizard/WizardPage";
 
 import { customElement } from "lit/decorators.js";
 
+export type FormWizardPageActiveCallback = <T extends FormWizardPage>(
+    context: T,
+) => void | Promise<void>;
+
 /**
  * This Wizard page is used for proxy forms with the older-style
  * wizards
  */
 @customElement("ak-wizard-page-form")
 export class FormWizardPage extends WizardPage {
-    activePageCallback: (context: FormWizardPage) => Promise<void> = async () => {
+    public activePageCallback: FormWizardPageActiveCallback = async () => {
         return Promise.resolve();
     };
 
-    activeCallback = async () => {
+    public override activeCallback = async () => {
         this.host.isValid = true;
+
         this.activePageCallback(this);
     };
 
-    nextCallback = async (): Promise<boolean> => {
+    public override nextCallback = async (): Promise<boolean> => {
         if (!this.children.length) {
             throw new TypeError(`No child elements found in ${this.slot}.`);
         }

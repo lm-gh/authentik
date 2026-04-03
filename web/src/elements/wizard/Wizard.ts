@@ -1,16 +1,23 @@
 import "#elements/wizard/ActionWizardPage";
 import "#elements/LoadingOverlay";
 
-import { EVENT_REFRESH } from "#common/constants";
+import { AKRefreshEvent } from "#common/events";
 
 import { AKElement } from "#elements/Base";
-import { findClosestHostMatch } from "#elements/utils/render-roots";
+import { listen } from "#elements/decorators/listen";
+import { SlottedTemplateResult } from "#elements/types";
+import { findNearestDialog } from "#elements/utils/render-roots";
 import { WizardPage } from "#elements/wizard/WizardPage";
 
-import { msg } from "@lit/localize";
+import { ButtonKindLabelRecord } from "#components/ak-wizard/shared";
+
+import { ConsoleLogger } from "#logger/browser";
+
+import { msg, str } from "@lit/localize";
 import { customElement } from "@lit/reactive-element/decorators/custom-element.js";
 import { property } from "@lit/reactive-element/decorators/property.js";
-import { css, CSSResult, html, nothing, TemplateResult } from "lit";
+import { css, CSSResult, html, PropertyValues } from "lit";
+import { guard } from "lit-html/directives/guard.js";
 import { state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 
@@ -24,11 +31,17 @@ export interface WizardAction {
     run: () => Promise<boolean>;
 }
 
+export interface StepProgress {
+    activeStepElement: WizardPage | null;
+    activeStepIndex: number;
+    lastPage: boolean;
+}
+
 export const ApplyActionsSlot = "apply-actions";
 
 @customElement("ak-wizard")
-export class Wizard extends AKElement {
-    static styles: CSSResult[] = [
+export class AKWizard extends AKElement {
+    public static styles: CSSResult[] = [
         PFButton,
         PFTitle,
         PFWizard,
@@ -38,20 +51,58 @@ export class Wizard extends AKElement {
                 height: min(var(--ak-c-dialog--AspectRatioHeight), var(--ak-c-dialog--MaxHeight));
             }
 
+            .pf-c-wizard__main {
+                overscroll-behavior: contain;
+            }
+
             .pf-c-wizard__main-body {
                 display: flex;
-                height: stretch;
             }
         `,
     ];
 
-    //#region Properties
+    protected logger = ConsoleLogger.prefix(this.tagName.toLocaleLowerCase());
+
+    //#region Public Properties
+
+    public formatARIALabel = () => {
+        if (this.entitySingular) {
+            return msg(str`New ${this.entitySingular} Wizard`, {
+                id: "wizard.ariaLabel.entity-singular",
+                desc: "ARIA label for the creation wizard, where the entity singular is interpolated.",
+            });
+        }
+
+        return msg("Creation Wizard", {
+            id: "wizard.ariaLabel.default",
+            desc: "ARIA label for the creation wizard when no entity singular is provided.",
+        });
+    };
+
+    /**
+     * Formats the header text for the wizard, using the {@linkcode entitySingular} property if available.
+     */
+    public formatHeader(): string {
+        if (this.entitySingular) {
+            return msg(str`New ${this.entitySingular}`, {
+                id: "wizard.header.entity-singular",
+                desc: "Header for the creation wizard, where the entity singular is interpolated.",
+            });
+        }
+
+        return msg("New entity", {
+            id: "wizard.header.default",
+            desc: "Header for the creation wizard when no entity singular is provided.",
+        });
+    }
+
+    //#region Public Properties
 
     /**
      * Whether the wizard can be cancelled.
      */
     @property({ type: Boolean })
-    public canCancel = true;
+    public cancelable = true;
 
     /**
      * Whether the wizard can go back to the previous step.
@@ -66,16 +117,29 @@ export class Wizard extends AKElement {
     public header?: string;
 
     /**
-     * Description of the wizard.
+     * Optional singular label for the type of entity this wizard creates, used in messages and the like.
      */
-    @property()
-    public description?: string;
+    @property({ type: String, attribute: "entity-singular" })
+    public entitySingular: string | null = null;
+
+    /**
+     * Optional plural label for the type of entity this wizard creates, used in messages and the like.
+     */
+    @property({ type: String, attribute: "entity-plural" })
+    public entityPlural: string | null = null;
+
+    /**
+     * An optional description to show on the initial page of the wizard,
+     * used to explain the different types or provide general information about the creation process.
+     */
+    @property({ type: String })
+    public description: string | null = null;
 
     /**
      * Whether the wizard is valid and can proceed to the next step.
      */
     @property({ type: Boolean })
-    isValid = false;
+    public isValid = false;
 
     /**
      * Actions to display at the end of the wizard.
@@ -87,7 +151,10 @@ export class Wizard extends AKElement {
     public finalHandler?: () => Promise<void>;
 
     @property({ attribute: false })
-    public state: { [key: string]: unknown } = {};
+    public state: Record<string, unknown> = {};
+
+    @property({ attribute: false })
+    public dialog: HTMLDialogElement | null = null;
 
     //#endregion
 
@@ -99,148 +166,188 @@ export class Wizard extends AKElement {
     //#region State
 
     /**
-     * Memoized step tag names.
+     * Initial steps to reset to.
      */
-    @state()
-    protected _steps: string[] = [];
+    @property({ attribute: false })
+    public initialSteps: string[] = [];
+
+    #steps: string[] | null = null;
 
     /**
      * Step tag names present in the wizard.
      */
-    get steps(): string[] {
-        return this._steps;
+    public get steps(): readonly string[] {
+        return this.#steps || this.initialSteps;
     }
 
-    set steps(nextSteps: string[]) {
-        const addApplyActionsSlot = this._steps.includes(ApplyActionsSlot);
+    @property({ attribute: false })
+    public set steps(nextSteps: string[]) {
+        const applyStepPresent = this.#steps?.includes(ApplyActionsSlot);
 
-        this._steps = nextSteps;
-
-        if (addApplyActionsSlot) {
-            this.steps.push(ApplyActionsSlot);
+        if (applyStepPresent) {
+            nextSteps.push(ApplyActionsSlot);
         }
-
-        this.requestUpdate();
-    }
-
-    /**
-     * Initial steps to reset to.
-     */
-    #initialSteps: string[] = [];
-
-    @state()
-    protected activeStep: WizardPage | null = null;
-
-    set activeStepElement(nextActiveStepElement: WizardPage | null) {
-        this.activeStep = nextActiveStepElement;
-
-        if (!this.activeStep) return;
-
-        this.activeStep.activeCallback();
-        this.activeStep.requestUpdate();
+        this.#steps = nextSteps;
     }
 
     /**
      * The active step element being displayed.
      */
-    get activeStepElement(): WizardPage | null {
-        return this.activeStep;
+    @property({ attribute: false })
+    public activeStepElement: WizardPage | null = null;
+
+    protected get activeStepIndex(): number {
+        const { activeStepElement, steps } = this;
+
+        const activeStepIndex = activeStepElement ? steps.indexOf(activeStepElement.slot) : 0;
+
+        return activeStepIndex;
     }
 
-    getStepElementByIndex(stepIndex: number): WizardPage | null {
-        const stepName = this._steps[stepIndex];
+    protected getStepElementByIndex(stepIndex: number): WizardPage | null {
+        const stepName = this.steps[stepIndex];
 
+        return this.getStepElementByName(stepName);
+    }
+
+    protected getStepElementByName(stepName: string): WizardPage | null {
         return this.querySelector<WizardPage>(`[slot=${stepName}]`);
     }
 
-    getStepElementByName(stepName: string): WizardPage | null {
-        return this.querySelector<WizardPage>(`[slot=${stepName}]`);
-    }
+    /**
+     * Determines the current step progress, the active step element, its index,
+     * and whether it's the last page.
+     *
+     * @remarks
+     * TODO: This causes a synchronous update of the active step element.
+     * It'd be nice if this could be decoupled. Leaving as is for now since,
+     * x`but something to keep in mind if we run into weird update issues.
+     */
+    protected takeStepProgress(): StepProgress {
+        if (!this.activeStepElement) {
+            const firstStepElement = this.getStepElementByIndex(0);
 
-    #gatherSteps() {
-        const firstPage = this.getStepElementByIndex(0);
-
-        if (!this.activeStepElement && firstPage) {
-            this.activeStepElement = firstPage;
+            this.activeStepElement = firstStepElement;
         }
 
-        const activeStepIndex = this.activeStepElement
-            ? this.steps.indexOf(this.activeStepElement.slot)
-            : 0;
+        const { steps, activeStepElement } = this;
 
-        let lastPage = activeStepIndex === this.steps.length - 1;
+        const activeStepIndex = activeStepElement ? steps.indexOf(activeStepElement.slot) : 0;
 
-        if (lastPage && !this.steps.includes("ak-wizard-page-action") && this.actions.length > 0) {
-            this.steps = this.steps.concat("ak-wizard-page-action");
-            lastPage = activeStepIndex === this.steps.length - 1;
+        let lastPage = activeStepIndex === steps.length - 1;
+
+        if (lastPage && !steps.includes("ak-wizard-page-action") && this.actions.length > 0) {
+            this.steps = steps.concat("ak-wizard-page-action");
+
+            lastPage = activeStepIndex === steps.length - 1;
         }
 
         return {
-            firstPage,
+            activeStepElement,
             activeStepIndex,
             lastPage,
         };
     }
 
+    /**
+     * Navigates to the previous step, if possible.
+     */
+    protected navigatePrevious = (): Promise<void> => {
+        const prevPage = this.getStepElementByIndex(this.activeStepIndex - 1);
+
+        if (prevPage) {
+            this.activeStepElement = prevPage;
+        }
+
+        return Promise.resolve();
+    };
+
+    /**
+     * Navigates to the next step, if possible.
+     * If the current step has a `nextCallback`, it will be invoked first.
+     */
+    protected navigateNext = async (event?: Event): Promise<void> => {
+        const { activeStepElement, activeStepIndex, lastPage } = this.takeStepProgress();
+
+        if (!activeStepElement) return;
+
+        if (activeStepElement.nextCallback) {
+            this.loading = true;
+
+            const completedStep = await activeStepElement.nextCallback(event);
+
+            this.loading = false;
+
+            if (!completedStep) return;
+
+            if (lastPage) {
+                const promise = this.finalHandler?.() || Promise.resolve();
+
+                return promise.then(this.requestClose).finally(() => {
+                    this.loading = false;
+                });
+            }
+        }
+
+        const nextPage = this.getStepElementByIndex(activeStepIndex + 1);
+
+        if (!nextPage) {
+            this.logger.warn("No next page found for step", {
+                stepIndex: activeStepIndex + 1,
+                steps: this.steps,
+            });
+
+            return;
+        }
+
+        if (nextPage) {
+            this.activeStepElement = nextPage;
+        }
+    };
+
     //#endregion
 
     //#region Lifecycle
 
-    public firstUpdated(): void {
-        this.#initialSteps = this._steps;
-    }
-
-    public connectedCallback(): void {
+    public override connectedCallback() {
         super.connectedCallback();
-        this.addEventListener(EVENT_REFRESH, this.#refreshListener);
+
+        this.dialog ??= findNearestDialog(this);
     }
 
-    public disconnectedCallback(): void {
-        super.disconnectedCallback();
-        this.removeEventListener(EVENT_REFRESH, this.#refreshListener);
+    public override updated(changedProperties: PropertyValues<this>): void {
+        super.updated(changedProperties);
+
+        if (changedProperties.has("activeStepElement") && this.activeStepElement) {
+            const activated = this.activeStepElement.activeCallback?.() || Promise.resolve();
+
+            activated.catch((error: unknown) => {
+                this.logger.error("Error in active callback of step", {
+                    step: this.activeStepElement,
+                    error,
+                });
+            });
+        }
     }
 
     //#endregion
 
     //#region Event Listeners
 
-    /**
-     * Reset the wizard to its initial state.
-     */
-    protected cleanup = (event?: Event) => {
-        event?.preventDefault();
-        event?.stopPropagation();
-
-        const nearestDialog = findClosestHostMatch<HTMLDialogElement>(
-            this,
-            (element) => element instanceof HTMLDialogElement,
-        );
-
-        if (nearestDialog) {
-            nearestDialog.requestClose();
+    public requestClose = () => {
+        if (!this.dialog) {
+            this.logger.warn("Skipping close request: No dialog found for wizard.");
             return;
         }
 
-        for (const element of this.querySelectorAll("[data-wizardmanaged=true]")) {
-            element.remove();
-        }
-
-        for (const step of this.steps) {
-            const stepElement = this.getStepElementByName(step);
-
-            stepElement?.reset?.();
-        }
-
-        this.steps = this.#initialSteps;
-        this.actions = [];
-        this.state = {};
-        this.canBack = true;
-        this.canCancel = true;
-        this.activeStepElement = null;
+        this.dialog.requestClose();
     };
 
-    #refreshListener = (event: Event) => {
-        const { lastPage } = this.#gatherSteps();
+    @listen(AKRefreshEvent, {
+        target: window,
+    })
+    protected refreshListener = (event: AKRefreshEvent) => {
+        const { lastPage } = this.takeStepProgress();
 
         if (!lastPage) {
             event.stopImmediatePropagation();
@@ -251,60 +358,22 @@ export class Wizard extends AKElement {
 
     //#region Rendering
 
-    protected render(): TemplateResult {
-        const { activeStepIndex, lastPage } = this.#gatherSteps();
+    public renderHeader(): SlottedTemplateResult {
+        const { cancelable, description } = this;
 
-        const navigatePrevious = () => {
-            const prevPage = this.getStepElementByIndex(activeStepIndex - 1);
-
-            if (prevPage) {
-                this.activeStepElement = prevPage;
-            }
-        };
-
-        const navigateNext = async (): Promise<void> => {
-            if (!this.activeStepElement) return;
-
-            if (this.activeStepElement.nextCallback) {
-                this.loading = true;
-
-                const completedStep = await this.activeStepElement.nextCallback();
-
-                this.loading = false;
-
-                if (!completedStep) return;
-
-                if (lastPage) {
-                    const promise = this.finalHandler?.() || Promise.resolve();
-
-                    return promise
-                        .then(() => this.cleanup())
-                        .finally(() => {
-                            this.loading = false;
-                        });
-                }
-            }
-
-            const nextPage = this.getStepElementByIndex(activeStepIndex + 1);
-
-            if (nextPage) {
-                this.activeStepElement = nextPage;
-            }
-        };
-
-        return html`<div class="pf-c-wizard" role="presentation">
-            <header class="pf-c-wizard__header">
-                ${this.canCancel
+        return guard([cancelable, description], () => {
+            return html`<header class="pf-c-wizard__header">
+                ${cancelable
                     ? html`<button
                           data-test-id="wizard-close"
                           class="pf-c-button pf-m-plain pf-c-wizard__close"
                           type="button"
                           aria-label="${msg("Close wizard")}"
-                          @click=${this.cleanup}
+                          @click=${this.requestClose}
                       >
                           <i class="fas fa-times" aria-hidden="true"></i>
                       </button>`
-                    : nothing}
+                    : null}
                 <h1
                     id="modal-title"
                     role="heading"
@@ -312,7 +381,7 @@ export class Wizard extends AKElement {
                     class="pf-c-title pf-m-3xl pf-c-wizard__title"
                     data-test-id="wizard-heading"
                 >
-                    ${this.header}
+                    ${this.formatHeader()}
                 </h1>
                 <p
                     role="heading"
@@ -320,83 +389,130 @@ export class Wizard extends AKElement {
                     id="modal-description"
                     class="pf-c-wizard__description"
                 >
-                    ${this.description}
+                    ${description}
                 </p>
-            </header>
+            </header>`;
+        });
+    }
+
+    protected override render(): SlottedTemplateResult {
+        const stepProgress = this.takeStepProgress();
+
+        return html`<div class="pf-c-wizard" role="presentation">
+            ${this.renderHeader()}
 
             <div role="presentation" class="pf-c-wizard__outer-wrap">
                 ${this.loading ? this.loadingOverlay : null}
                 <div class="pf-c-wizard__inner-wrap">
                     <nav aria-label="${msg("Wizard steps")}" class="pf-c-wizard__nav">
                         <ol role="presentation" class="pf-c-wizard__nav-list">
-                            ${this.steps.map((step, idx) => {
-                                const stepEl = this.getStepElementByName(step);
-
-                                if (!stepEl) return html`<p>Unexpected missing step: ${step}</p>`;
-
-                                return html`
-                                    <li role="presentation" class="pf-c-wizard__nav-item">
-                                        <button
-                                            class=${classMap({
-                                                "pf-c-wizard__nav-link": true,
-                                                "pf-m-current": idx === activeStepIndex,
-                                            })}
-                                            type="button"
-                                            ?disabled=${activeStepIndex < idx}
-                                            @click=${() => {
-                                                this.activeStepElement = stepEl;
-                                            }}
-                                        >
-                                            ${stepEl.label ?? msg("UNNAMED")}
-                                        </button>
-                                    </li>
-                                `;
-                            })}
+                            ${this.renderStepList(stepProgress)}
                         </ol>
                     </nav>
-                    <main aria-label="${msg("Wizard content")}" class="pf-c-wizard__main">
+                    <main
+                        part="wizard-main"
+                        class="pf-c-wizard__main"
+                        aria-label=${msg("Wizard content")}
+                    >
                         <div role="presentation" class="pf-c-wizard__main-body">
-                            <slot name=${this.activeStepElement?.slot || this.steps[0]}></slot>
+                            ${this.renderBody()}
                         </div>
                     </main>
                 </div>
                 <nav class="pf-c-wizard__footer" aria-label="${msg("Wizard navigation")}">
-                    ${this.canCancel
+                    ${this.renderNavigationButtons(stepProgress)}
+                </nav>
+            </div>
+        </div>`;
+    }
+    protected renderStepList({ activeStepIndex }: StepProgress): SlottedTemplateResult {
+        const { steps, renderRoot } = this;
+
+        return guard([steps, activeStepIndex, renderRoot.childElementCount], () => {
+            return this.steps.map((step, idx) => {
+                const stepEl = this.getStepElementByName(step);
+
+                if (!stepEl) {
+                    console.warn(`Expected step element with slot="${step}" not found in wizard.`, {
+                        step,
+                        slotSelector: `[slot=${step}]`,
+                        renderRootChildren: renderRoot.children,
+                    });
+                    return html`<p>Unexpected missing step: ${step}</p>`;
+                }
+
+                return html`<li role="presentation" class="pf-c-wizard__nav-item">
+                    <button
+                        class=${classMap({
+                            "pf-c-wizard__nav-link": true,
+                            "pf-m-current": idx === activeStepIndex,
+                        })}
+                        type="button"
+                        ?disabled=${activeStepIndex < idx}
+                        @click=${() => {
+                            this.activeStepElement = stepEl;
+                        }}
+                    >
+                        ${stepEl.label ?? msg("UNNAMED")}
+                    </button>
+                </li>`;
+            });
+        });
+    }
+
+    protected renderBody(): SlottedTemplateResult {
+        return html`<slot name=${this.activeStepElement?.slot || this.steps[0]}></slot>`;
+    }
+
+    protected renderNavigationButtons({
+        activeStepIndex,
+        lastPage,
+    }: StepProgress): SlottedTemplateResult {
+        const { canBack, cancelable, isValid, childElementCount } = this;
+
+        return guard(
+            [activeStepIndex, lastPage, canBack, cancelable, isValid, childElementCount],
+            () => {
+                const nextLabel =
+                    lastPage && activeStepIndex > 0
+                        ? ButtonKindLabelRecord.create()
+                        : ButtonKindLabelRecord.next();
+
+                return [
+                    cancelable
                         ? html`<div class="pf-c-wizard__footer-cancel">
                               <button
                                   data-test-id="wizard-navigation-cancel"
                                   class="pf-c-button pf-m-link"
                                   type="button"
-                                  @click=${this.cleanup}
+                                  @click=${this.requestClose}
                               >
                                   ${msg("Cancel")}
                               </button>
                           </div>`
-                        : nothing}
-                    ${activeStepIndex > 0 && this.canBack
-                        ? html`
-                              <button
-                                  data-test-id="wizard-navigation-previous"
-                                  class="pf-c-button pf-m-secondary"
-                                  type="button"
-                                  @click=${navigatePrevious}
-                              >
-                                  ${msg("Back")}
-                              </button>
-                          `
-                        : nothing}
-                    <button
+                        : null,
+                    activeStepIndex > 0 && canBack
+                        ? html`<button
+                              data-test-id="wizard-navigation-previous"
+                              class="pf-c-button pf-m-secondary"
+                              type="button"
+                              @click=${this.navigatePrevious}
+                          >
+                              ${ButtonKindLabelRecord.back()}
+                          </button>`
+                        : null,
+                    html`<button
                         data-test-id="wizard-navigation-next"
                         class="pf-c-button pf-m-primary"
                         ?disabled=${!this.isValid}
                         type="button"
-                        @click=${navigateNext}
+                        @click=${this.navigateNext}
                     >
-                        ${lastPage && activeStepIndex > 0 ? msg("Finish") : msg("Next")}
-                    </button>
-                </nav>
-            </div>
-        </div>`;
+                        ${nextLabel}
+                    </button>`,
+                ];
+            },
+        );
     }
 
     //#endregion
@@ -404,7 +520,7 @@ export class Wizard extends AKElement {
 
 declare global {
     interface HTMLElementTagNameMap {
-        "ak-wizard": Wizard;
+        "ak-wizard": AKWizard;
     }
 
     interface WizardNavigationTestIDMap {

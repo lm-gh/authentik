@@ -62,6 +62,15 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
             .pf-c-page__main-section {
                 margin-bottom: 2rem;
             }
+
+            :host([theme="dark"]) .pf-c-card {
+                --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--150);
+                --pf-c-card--m-selectable-raised--before--Right: -1px;
+                --pf-c-card--m-selectable-raised--before--Left: -1px;
+                --pf-c-card--m-selectable-raised--m-selected-raised--BoxShadow:
+                    0 0 0 1px var(--pf-c-card--m-non-selectable-raised--before--BackgroundColor),
+                    var(--pf-global--BoxShadow--lg);
+            }
         `,
     ];
 
@@ -92,13 +101,17 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
 
     #selectDispatch = (type: TypeCreate) => {
         this.dispatchEvent(
-            new CustomEvent("select", {
+            new CustomEvent("ak-type-create-select", {
                 detail: type,
                 bubbles: true,
                 composed: true,
             }),
         );
     };
+
+    //#region Rendering
+
+    //#region Grid layout
 
     protected renderGridItems(): SlottedTemplateResult {
         if (!this.types?.length) {
@@ -175,6 +188,10 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
         </div>`;
     }
 
+    //#endregion
+
+    //#region List layout
+
     protected renderListItems(): SlottedTemplateResult {
         if (!this.types?.length) {
             return null;
@@ -233,10 +250,12 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
         </form>`;
     }
 
-    render(): SlottedTemplateResult {
-        const { layout } = this;
+    //#endregion
 
-        const content = guard([layout, this.types], () => {
+    protected override render(): SlottedTemplateResult {
+        const { layout, types, selectedType } = this;
+
+        const content = guard([layout, types, selectedType], () => {
             switch (layout) {
                 case TypeCreateWizardPageLayouts.grid:
                     return this.renderGrid();
@@ -254,6 +273,8 @@ export class TypeCreateWizardPage extends WithLicenseSummary(WizardPage) {
             content,
         ];
     }
+
+    //#endregion
 }
 
 declare global {

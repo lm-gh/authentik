@@ -1,5 +1,5 @@
 import "#admin/policies/PolicyTestForm";
-import "#admin/policies/PolicyWizard";
+import "#admin/policies/ak-policy-wizard";
 import "#admin/policies/dummy/DummyPolicyForm";
 import "#admin/policies/event_matcher/EventMatcherPolicyForm";
 import "#admin/policies/expiry/ExpiryPolicyForm";
@@ -21,6 +21,8 @@ import { PaginatedResponse, TableColumn } from "#elements/table/Table";
 import { TablePage } from "#elements/table/TablePage";
 import { SlottedTemplateResult } from "#elements/types";
 import { StrictUnsafe } from "#elements/utils/unsafe";
+
+import { AKPolicyWizard } from "#admin/policies/ak-policy-wizard";
 
 import { PoliciesApi, Policy } from "@goauthentik/api";
 
@@ -118,8 +120,17 @@ export class PolicyListPage extends TablePage<Policy> {
         </ak-forms-delete-bulk>`;
     }
 
-    renderObjectCreate(): TemplateResult {
-        return html`<ak-policy-wizard> </ak-policy-wizard>`;
+    protected override renderObjectCreate(): SlottedTemplateResult {
+        return html`
+            <button
+                class="pf-c-button pf-m-primary"
+                type="button"
+                aria-description="${msg("Open the wizard to create a new policy.")}"
+                ${AKPolicyWizard.asModalInvoker()}
+            >
+                ${msg("New Policy")}
+            </button>
+        `;
     }
 
     renderToolbar(): TemplateResult {

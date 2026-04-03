@@ -10,8 +10,8 @@ import { WizardStep } from "#components/ak-wizard/WizardStep";
 
 import { ApplicationWizardStyles } from "#admin/applications/wizard/ApplicationWizardFormStepStyles.styles";
 import {
-    type ApplicationWizardState,
-    type ApplicationWizardStateUpdate,
+    type ApplicationWizardContext,
+    type ApplicationWizardContextUpdate,
 } from "#admin/applications/wizard/steps/providers/shared";
 
 import { ApplicationRequest } from "@goauthentik/api";
@@ -28,7 +28,7 @@ export abstract class ApplicationWizardStep<T = Partial<ApplicationRequest>> ext
     static styles = [...WizardStep.styles, ...ApplicationWizardStyles];
 
     @property({ type: Object, attribute: false })
-    public wizard!: ApplicationWizardState;
+    public wizard!: ApplicationWizardContext;
 
     protected override wizardTitle = msg("New application");
     protected override wizardDescription = msg(
@@ -79,7 +79,7 @@ export abstract class ApplicationWizardStep<T = Partial<ApplicationRequest>> ext
     // This pattern became visible during development, and the order is important: wizard updating
     // and validation must complete before navigation is attempted.
     public handleUpdate(
-        update?: ApplicationWizardStateUpdate,
+        update?: ApplicationWizardContextUpdate,
         destination?: string,
         enable?: NavigationEventInit,
     ) {

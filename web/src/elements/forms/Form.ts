@@ -12,6 +12,7 @@ import {
 import { APIMessage, MessageLevel } from "#common/messages";
 
 import { AKElement } from "#elements/Base";
+import { intersectionObserver } from "#elements/decorators/intersection-observer";
 import { TransclusionElement, TransclusionSymbol } from "#elements/dialogs/shared";
 import {
     DialogInit,
@@ -29,7 +30,6 @@ import { serializeForm } from "#elements/forms/serialization";
 import { showMessage } from "#elements/messages/MessageContainer";
 import { SlottedTemplateResult } from "#elements/types";
 import { createFileMap } from "#elements/utils/inputs";
-import { isInViewport } from "#elements/utils/viewport";
 
 import { ConsoleLogger } from "#logger/browser";
 
@@ -161,31 +161,15 @@ export class Form<T = Record<string, unknown>, D = T>
 
     //#region Properties
 
-    #cachedVisibility: boolean | null = null;
-
     /**
      * Whether the table is visible in the viewport.
      *
      * @remarks
      * We cache the visibility between frames to avoid the synchronous `getBoundingClientRect()`
      * call within {@linkcode isInViewport}.
-     *
      */
-    public get visible() {
-        if (this.#cachedVisibility === null) {
-            this.#cachedVisibility = isInViewport(this);
-
-            requestAnimationFrame(() => {
-                this.#cachedVisibility = null;
-            });
-        }
-
-        return this.#cachedVisibility;
-    }
-
-    public set visible(value: boolean) {
-        this.#cachedVisibility = value;
-    }
+    @intersectionObserver()
+    public visible = false;
 
     @property({ type: String })
     public successMessage?: string;
@@ -205,7 +189,7 @@ export class Form<T = Record<string, unknown>, D = T>
     public submitLabel: string | null = null;
 
     @property({ type: String, attribute: "cancel-label", useDefault: true })
-    public cancelButtonLabel: string | null = null;
+    public cancelButtonLabel: string | null = msg("Cancel");
 
     //#endregion
 
@@ -241,14 +225,15 @@ export class Form<T = Record<string, unknown>, D = T>
     protected nonFieldErrors: readonly string[] | null = null;
 
     /**
-     * Optiona singular label for the type of entity this form creates/edits, used in success messages and the like.
+     * Optional singular label for the type of entity this form creates/edits, used in success messages and the like.
      */
-    @property({ type: String })
+    @property({ type: String, attribute: "entity-singular" })
     public entitySingular: string | null = null;
+
     /**
-     * Optiona plural label for the type of entity this form creates/edits, used in success messages and the like.
+     * Optional plural label for the type of entity this form creates/edits, used in success messages and the like.
      */
-    @property({ type: String })
+    @property({ type: String, attribute: "entity-plural" })
     public entityPlural: string | null = null;
 
     protected defaultSlot: HTMLSlotElement = this.ownerDocument.createElement("slot");
@@ -322,10 +307,10 @@ export class Form<T = Record<string, unknown>, D = T>
 
         return this.entitySingular
             ? msg(str`Create ${this.entitySingular}`, {
-                  id: "model-form.create-submit",
+                  id: "form.create-submit",
               })
             : msg("Create", {
-                  id: "model-form.create-submit-no-entity",
+                  id: "form.create-submit-no-entity",
               });
     }
 
@@ -576,14 +561,20 @@ export class Form<T = Record<string, unknown>, D = T>
      * allowing the slot parent to provide the header in a more visually appropriate manner.
      */
     public renderHeader(force?: boolean): SlottedTemplateResult {
-        const { assignedSlot, headline } = this;
+        const { headline, assignedSlot } = this;
 
         return guard([force, assignedSlot, headline], () => {
-            if (!force && assignedSlot && (!assignedSlot.name || assignedSlot.name === "form")) {
-                return nothing;
+            if (
+                !force &&
+                assignedSlot &&
+                (assignedSlot.name === "form" || assignedSlot.name === "")
+            ) {
+                return null;
             }
 
-            return this.formatHeadline(headline);
+            return html`<h1 part="form-header" class="pf-c-title pf-m-2xl">
+                ${this.formatHeadline()}
+            </h1>`;
         });
     }
 
@@ -607,11 +598,15 @@ export class Form<T = Record<string, unknown>, D = T>
      * allowing the slot parent to provide the actions in a more visually appropriate manner.
      */
     public renderActions(force?: boolean): SlottedTemplateResult {
-        const { assignedSlot, submitLabel } = this;
+        const { submitLabel, assignedSlot } = this;
 
         return guard([force, assignedSlot, submitLabel], () => {
-            if (!force && assignedSlot && (!assignedSlot.name || assignedSlot.name === "form")) {
-                return nothing;
+            if (
+                !force &&
+                assignedSlot &&
+                (assignedSlot.name === "form" || assignedSlot.name === "")
+            ) {
+                return null;
             }
 
             return html`<div part="form-actions" class="pf-c-card__footer">

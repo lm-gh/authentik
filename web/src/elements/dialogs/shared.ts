@@ -1,5 +1,7 @@
 import { SlottedTemplateResult } from "#elements/types";
 
+import { LitElement } from "lit";
+
 /**
  * A symbol used to identify elements that are designed to be transcluded
  * into dialogs or other containers that support transclusion.
@@ -9,7 +11,7 @@ export const TransclusionSymbol = Symbol("transclusion");
 /**
  * An element that is designed to included in a dialog or other container that supports transclusion.
  */
-export interface TransclusionElement extends Element {
+export interface TransclusionElement extends LitElement {
     /**
      * A marker property to identify this element as a TransclusionElement.
      *
@@ -44,7 +46,17 @@ export interface TransclusionElement extends Element {
      */
     renderActions?(force?: boolean): SlottedTemplateResult;
 
+    /**
+     * The label to use for the cancel button when this element is transcluded
+     * into a dialog or other container.
+     */
     cancelButtonLabel?: string | null;
+
+    /**
+     * Whether the dialog or other container should render a default cancel button
+     * when this element is transcluded.
+     */
+    cancelable?: boolean;
 }
 
 /**

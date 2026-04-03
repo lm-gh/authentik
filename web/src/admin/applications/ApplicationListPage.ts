@@ -20,7 +20,7 @@ import { ifPresent } from "#elements/utils/attributes";
 
 import { ApplicationForm } from "#admin/applications/ApplicationForm";
 import Styles from "#admin/applications/ApplicationListPage.css";
-import { AkApplicationWizard } from "#admin/applications/wizard/ak-application-wizard";
+import { AKApplicationWizard } from "#admin/applications/wizard/ak-application-wizard";
 
 import { Application, CoreApi, PoliciesApi } from "@goauthentik/api";
 
@@ -72,7 +72,7 @@ export class ApplicationListPage extends WithBrandConfig(TablePage<Application>)
         super.firstUpdated(changed);
 
         if (getURLParam("createWizard", false)) {
-            AkApplicationWizard.showModal();
+            AKApplicationWizard.showModal();
         } else if (getURLParam("createForm", false)) {
             ApplicationForm.showModal();
         }
@@ -173,7 +173,7 @@ export class ApplicationListPage extends WithBrandConfig(TablePage<Application>)
                 <button
                     class="pf-c-dropdown__toggle-button"
                     type="button"
-                    ${AkApplicationWizard.asModalInvoker()}
+                    ${AKApplicationWizard.asModalInvoker()}
                 >
                     ${msg("New Application")}
                 </button>
@@ -203,7 +203,7 @@ export class ApplicationListPage extends WithBrandConfig(TablePage<Application>)
                         type="button"
                         role="menuitem"
                         class="pf-c-dropdown__menu-item"
-                        ${AkApplicationWizard.asModalInvoker()}
+                        ${AKApplicationWizard.asModalInvoker()}
                         aria-description=${msg(
                             "Opens the new application wizard, which will guide you through creating a new application with an existing provider.",
                         )}

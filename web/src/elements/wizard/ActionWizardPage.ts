@@ -45,7 +45,7 @@ export class ActionWizardPage extends WizardPage {
         }));
 
         this.host.canBack = false;
-        this.host.canCancel = false;
+        this.host.cancelable = false;
 
         await this.run();
 
